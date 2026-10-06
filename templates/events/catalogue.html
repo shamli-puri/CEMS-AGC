@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% import "_macros.html" as m %}
+{% block title %}Event Catalogue — {{ APP_NAME }} | {{ APP_TITLE }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>AGC Event Catalogue</h1>
+    <p class="muted">Every event published on {{ APP_NAME }} for {{ ORG_NAME }}.</p>
+  </div>
+  <a class="btn btn-ghost" href="{{ url_for('main.role_home') }}">{{ ui.icon('chevron-left', 16) }} Dashboard</a>
+</div>
+
+<form class="toolbar" method="get" action="{{ url_for('events.catalogue') }}">
+  <div class="toolbar__search">
+    {{ ui.icon('search', 17) }}
+    <input type="search" name="q" value="{{ filters.q or '' }}" placeholder="Search events, venues…" aria-label="Search events">
+  </div>
+  <select name="category" aria-label="Category">
+    <option value="all">All categories</option>
+    {% for cat in categories %}
+      <option value="{{ cat }}" {% if filters.category == cat %}selected{% endif %}>{{ cat }}</option>
+    {% endfor %}
+  </select>
+  <select name="status" aria-label="Status">
+    <option value="all">All statuses</option>
+    {% for s in ['UPCOMING', 'ONGOING', 'COMPLETED', 'CANCELLED'] %}
+      <option value="{{ s }}" {% if filters.status == s %}selected{% endif %}>{{ s.title() }}</option>
+    {% endfor %}
+  </select>
+  <input type="date" name="date_from" value="{{ filters.date_from or '' }}" title="From date" aria-label="From date">
+  <input type="date" name="date_to" value="{{ filters.date_to or '' }}" title="To date" aria-label="To date">
+  <button type="submit" class="btn btn-primary">{{ ui.icon('filter', 16) }} Apply</button>
+  <a class="btn btn-ghost" href="{{ url_for('events.catalogue') }}">{{ ui.icon('refresh', 16) }} Reset</a>
+</form>
+
+{% if filter_error %}<p class="alert alert--warning">{{ filter_error }}</p>{% endif %}
+<p class="muted">{{ events | length }} event(s) found</p>
+
+{% if events %}
+  <div class="grid grid--3">
+    {% for event in events %}
+      {{ m.event_card(event, show_register=current_user.is_student,
+                      registered=(event.id in registered_ids),
+                      registration_id=registered_ids.get(event.id)) }}
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="card empty">
+    {{ ui.icon('search', 40) }}
+    <p><strong>No events match your search.</strong></p>
+    <a class="btn btn-primary btn-sm" href="{{ url_for('events.catalogue') }}">{{ ui.icon('refresh', 15) }} Reset filters</a>
+  </div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% block title %}{{ event.title }} — Organizer | {{ APP_NAME }}{% endblock %}
+{% block body_class %}app-body app-body--organizer{% endblock %}
+
+{% block content %}
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+  <a href="{{ url_for('organizer.dashboard') }}">Dashboard</a> {{ ui.icon('chevron-right', 13) }}
+  <a href="{{ url_for('organizer.events') }}">My Events</a> {{ ui.icon('chevron-right', 13) }}
+  <span>{{ event.title | shorten(40) }}</span>
+</nav>
+
+<div class="page-head page-head--organizer">
+  <div>
+    <span class="badge {{ event.status_class() }}">{{ event.status }}</span>
+    <h1>{{ event.title }}</h1>
+    <p class="muted">{{ event.event_date | date_fmt }} &middot; {{ event.time_range }} &middot; {{ event.venue }}</p>
+  </div>
+  <div class="page-head__actions">
+    <a class="btn btn-organizer" href="{{ url_for('organizer.edit_event', event_id=event.id) }}">{{ ui.icon('edit', 17) }} Edit event</a>
+    <a class="btn btn-ghost" href="{{ url_for('organizer.event_registrations', event_id=event.id) }}">{{ ui.icon('users', 17) }} Registrations</a>
+    <a class="btn btn-ghost" href="{{ url_for('organizer.attendance', event_id=event.id) }}">{{ ui.icon('check', 17) }} Attendance</a>
+    <a class="btn btn-ghost" href="{{ url_for('organizer.event_statistics', event_id=event.id) }}">
+      {{ ui.icon('chart', 17) }} Statistics
+    </a>
+    {% if event.is_cancelled %}
+      <form method="post" action="{{ url_for('organizer.restore_event', event_id=event.id) }}" class="inline-form">
+        <button type="submit" class="btn btn-accent">{{ ui.icon('refresh', 17) }} Restore event</button>
+      </form>
+    {% else %}
+      <form method="post" action="{{ url_for('organizer.cancel_event', event_id=event.id) }}" class="inline-form"
+            data-confirm="Cancel &quot;{{ event.title }}&quot;? All confirmed registrations will be released and participants notified.">
+        <button type="submit" class="btn btn-danger-ghost">{{ ui.icon('x', 17) }} Cancel event</button>
+      </form>
+    {% endif %}
+    <form method="post" action="{{ url_for('organizer.delete_event', event_id=event.id) }}" class="inline-form"
+          data-confirm="PERMANENTLY delete &quot;{{ event.title }}&quot; with all its registrations? This cannot be undone.">
+      <button type="submit" class="btn btn-danger">{{ ui.icon('trash', 17) }} Delete</button>
+    </form>
+  </div>
+</div>
+
+<div class="grid grid--4 stat-grid">
+  <div class="stat-card stat-card--primary"><div class="stat-card__icon">{{ ui.icon('users', 22) }}</div>
+    <div class="stat-card__text"><span class="stat-card__value">{{ stats.confirmed }}</span><span class="stat-card__label">Registrations</span><span class="stat-card__hint">of {{ stats.capacity }}</span></div></div>
+  <div class="stat-card stat-card--success"><div class="stat-card__icon">{{ ui.icon('check-circle', 22) }}</div>
+    <div class="stat-card__text"><span class="stat-card__value">{{ stats.present }}</span><span class="stat-card__label">Attendees</span></div></div>
+  <div class="stat-card stat-card--info"><div class="stat-card__icon">{{ ui.icon('clock', 22) }}</div>
+    <div class="stat-card__text"><span class="stat-card__value">{{ stats.unmarked }}</span><span class="stat-card__label">Pending</span></div></div>
+  <div class="stat-card stat-card--organizer"><div class="stat-card__icon">{{ ui.icon('star', 22) }}</div>
+    <div class="stat-card__text"><span class="stat-card__value">{{ stats.average_rating or '-' }}</span><span class="stat-card__label">Avg rating</span><span class="stat-card__hint">{{ stats.feedback_count }} response(s)</span></div></div>
+</div>
+
+<div class="grid grid--2 grid--main">
+  <div class="stack">
+    <section class="card">
+      <div class="card__head"><h3>{{ ui.icon('notice', 19) }} Event information</h3></div>
+      <p class="prose">{{ event.description }}</p>
+      <div class="detail-grid mt">
+        <div><span class="detail-grid__label">Category</span>{{ event.category }}</div>
+        <div><span class="detail-grid__label">Capacity</span>{{ event.max_capacity }}</div>
+        <div><span class="detail-grid__label">Registration deadline</span>{{ event.registration_deadline | datetime_fmt }}</div>
+        <div><span class="detail-grid__label">Certificates</span>{{ 'Enabled' if event.certificate_eligible else 'Disabled' }}</div>
+        <div><span class="detail-grid__label">Created</span>{{ event.created_at | datetime_fmt }}</div>
+        <div><span class="detail-grid__label">Registration state</span>{{ event.registration_state()[1] }}</div>
+      </div>
+      {% if event.image_filename %}
+        <img class="event-image" src="{{ url_for('static', filename='uploads/' ~ event.image_filename) }}" alt="{{ event.title }}">
+      {% endif %}
+    </section>
+
+    <section class="card">
+      <div class="card__head">
+        <h3>{{ ui.icon('users', 19) }} Registered students</h3>
+        <a class="btn btn-sm btn-organizer" href="{{ url_for('organizer.event_registrations', event_id=event.id) }}">Manage all</a>
+      </div>
+      {% if confirmed %}
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Student</th><th>Registration ID</th><th>Attendance</th><th class="right">Actions</th></tr></thead>
+            <tbody>
+              {% for r in confirmed[:10] %}
+                <tr>
+                  <td class="link-strong">{{ r.student.name }}<small class="block muted">{{ r.student.roll_number }} &middot; {{ r.student.department }}</small></td>
+                  <td><code class="code-chip">{{ r.registration_id }}</code></td>
+                  <td><span class="badge {{ r.attendance_class }}">{{ r.attendance_status }}</span></td>
+                  <td class="right nowrap">
+                    <form method="post" action="{{ url_for('organizer.toggle_attendance', registration_id=r.id) }}" class="inline-form">
+                      <button type="submit" class="btn btn-sm btn-organizer">
+                        {{ ui.icon('refresh', 14) }} {{ 'Absent' if r.attendance and r.attendance.status == 'PRESENT' else 'Present' }}
+                      </button>
+                    </form>
+                    <form method="post" action="{{ url_for('organizer.cancel_registration', registration_id=r.id) }}" class="inline-form"
+                          data-confirm="Cancel the registration of {{ r.student.name }}?">
+                      <button type="submit" class="btn btn-sm btn-danger-ghost">{{ ui.icon('x', 14) }}</button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% if confirmed | length > 10 %}
+          <p class="muted small">Showing 10 of {{ confirmed | length }} registrations.</p>
+        {% endif %}
+      {% else %}
+        <div class="empty">
+          {{ ui.icon('users', 32) }}
+          <p><strong>No registrations yet.</strong></p>
+          <p class="muted">Share the event page so students can register.</p>
+        </div>
+      {% endif %}
+    </section>
+  </div>
+
+  <div class="stack">
+    <section class="card card--organizer">
+      <div class="card__head"><h3>{{ ui.icon('chart', 19) }} Event statistics</h3></div>
+      <div class="mini-stat-grid">
+        <div><strong>{{ stats.fill_rate }}%</strong><span>Fill rate</span></div>
+        <div><strong>{{ stats.attendance_rate }}%</strong><span>Attendance</span></div>
+        <div><strong>{{ stats.cancelled }}</strong><span>Cancelled regs</span></div>
+        <div><strong>{{ stats.feedback_count }}</strong><span>Feedback</span></div>
+      </div>
+      <a class="btn btn-sm btn-organizer btn-block" href="{{ url_for('organizer.event_statistics', event_id=event.id) }}">
+        {{ ui.icon('chart', 15) }} Full report
+      </a>
+    </section>
+
+    <section class="card">
+      <div class="card__head"><h3>{{ ui.icon('certificate', 19) }} Certificates</h3></div>
+      <p class="muted">{{ certificates | length }} certificate(s) issued for this event.</p>
+      <a class="btn btn-sm btn-ghost btn-block" href="{{ url_for('organizer.event_certificates', event_id=event.id) }}">
+        {{ ui.icon('award', 15) }} Manage certificates
+      </a>
+    </section>
+
+    <section class="card">
+      <div class="card__head"><h3>{{ ui.icon('grid', 19) }} Event tools</h3></div>
+      <div class="stack-sm">
+        <a class="btn btn-sm btn-ghost btn-block" href="{{ url_for('organizer.attendees', event_id=event.id) }}">{{ ui.icon('list', 15) }} Attendee list</a>
+        <a class="btn btn-sm btn-ghost btn-block" href="{{ url_for('organizer.attendance_report', event_id=event.id) }}">{{ ui.icon('download', 15) }} Attendance PDF</a>
+        <a class="btn btn-sm btn-ghost btn-block" href="{{ url_for('organizer.feedback', event_id=event.id) }}">{{ ui.icon('feedback', 15) }} Event feedback</a>
+        <a class="btn btn-sm btn-ghost btn-block" href="{{ url_for('events.detail', event_id=event.id) }}">{{ ui.icon('eye', 15) }} Public event page</a>
+        <a class="btn btn-sm btn-ghost btn-block" href="{{ url_for('organizer.create_notice') }}">{{ ui.icon('bell', 15) }} Publish a notice</a>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

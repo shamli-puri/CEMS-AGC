@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% block title %}Registrations — {{ event.title }} | {{ APP_NAME }}{% endblock %}
+{% block body_class %}app-body app-body--faculty{% endblock %}
+
+{% block content %}
+<div class="page-head page-head--faculty">
+  <div>
+    <span class="badge {{ event.status_class() }}">{{ event.status }}</span>
+    <h1>{{ event.title }}</h1>
+    <p class="muted">{{ event.event_date | date_fmt }} &middot; {{ event.venue }} &middot; organiser {{ event.organizer.name }}</p>
+  </div>
+  <div class="page-head__actions">
+    <a class="btn btn-faculty" href="{{ url_for('faculty.attendance', event_id=event.id) }}">{{ ui.icon('check', 17) }} Mark attendance</a>
+    <a class="btn btn-ghost" href="{{ url_for('faculty.attendance_report', event_id=event.id) }}">{{ ui.icon('download', 17) }} PDF register</a>
+    <a class="btn btn-ghost" href="{{ url_for('faculty.event_detail', event_id=event.id) }}">{{ ui.icon('chevron-left', 16) }} Event</a>
+  </div>
+</div>
+
+<div class="mini-stat-grid card">
+  <div><strong>{{ stats.confirmed }}</strong><span>Confirmed</span></div>
+  <div><strong>{{ stats.cancelled }}</strong><span>Cancelled</span></div>
+  <div><strong>{{ stats.present }}</strong><span>Present</span></div>
+  <div><strong>{{ stats.unmarked }}</strong><span>Unmarked</span></div>
+  <div><strong>{{ stats.capacity }}</strong><span>Capacity</span></div>
+  <div><strong>{{ stats.fill_rate }}%</strong><span>Fill rate</span></div>
+</div>
+
+<div class="toolbar toolbar--tabs">
+  {% set scopes = [('confirmed', 'Confirmed'), ('present', 'Present'), ('absent', 'Absent'), ('unmarked', 'Unmarked'), ('cancelled', 'Cancelled'), ('all', 'All')] %}
+  <div class="tab-group">
+    {% for key, label in scopes %}
+      <a class="tab {% if scope == key %}tab--active{% endif %}"
+         href="{{ url_for('faculty.event_registrations', event_id=event.id, scope=key) }}">{{ label }}</a>
+    {% endfor %}
+  </div>
+</div>
+
+{% if registrations %}
+  <div class="table-wrap card">
+    <table class="table">
+      <thead>
+        <tr><th>#</th><th>Student</th><th>Roll no</th><th>Department</th><th>Email</th><th>Registration ID</th><th>Registered on</th><th>Status</th><th>Attendance</th><th class="right">Toggle</th></tr>
+      </thead>
+      <tbody>
+        {% for r in registrations %}
+          <tr class="{% if r.is_cancelled %}row--muted{% endif %}">
+            <td>{{ loop.index }}</td>
+            <td class="link-strong">{{ r.student.name }}</td>
+            <td>{{ r.student.roll_number or '-' }}</td>
+            <td>{{ r.student.department or '-' }}</td>
+            <td class="small">{{ r.student.email }}</td>
+            <td><code class="code-chip">{{ r.registration_id }}</code></td>
+            <td class="nowrap small">{{ r.registered_at | datetime_fmt }}</td>
+            <td><span class="badge {{ r.status_class() }}">{{ r.status }}</span></td>
+            <td><span class="badge {{ r.attendance_class }}">{{ r.attendance_status }}</span></td>
+            <td class="right">
+              {% if r.is_confirmed %}
+                <form method="post" action="{{ url_for('faculty.toggle_attendance', registration_id=r.id) }}" class="inline-form">
+                  <button type="submit" class="btn btn-sm btn-faculty">
+                    {{ ui.icon('refresh', 14) }} {{ 'Absent' if r.attendance and r.attendance.status == 'PRESENT' else 'Present' }}
+                  </button>
+                </form>
+              {% else %}
+                <span class="muted small">-</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="card empty">
+    {{ ui.icon('users', 40) }}
+    <p><strong>No registrations in this view.</strong></p>
+    <a class="btn btn-faculty btn-sm" href="{{ url_for('faculty.event_registrations', event_id=event.id, scope='all') }}">
+      {{ ui.icon('refresh', 15) }} Show all
+    </a>
+  </div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% set endpoint = {'student': 'auth.login_student', 'faculty': 'auth.login_faculty', 'organizer': 'auth.login_organizer'}[role_key] %}
+{% set register_endpoint = {'student': 'auth.register_student', 'faculty': 'auth.register_faculty', 'organizer': 'auth.register_organizer'}[role_key] %}
+{% set next_url = request.args.get('next', '') %}
+{% block title %}{{ welcome }} — {{ APP_NAME }} | {{ APP_TITLE }}{% endblock %}
+{% block body_class %}app-body app-body--auth{% endblock %}
+{% block content_class %}content--auth{% endblock %}
+
+{% block content %}
+<div class="auth-shell">
+  <section class="auth-brand-panel auth-brand-panel--{{ role_key }}">
+    <div class="auth-brand-panel__inner">
+      <div class="auth-brand">
+        {{ ui.brand_mark(56) }}
+        <div>
+          <h1>{{ APP_NAME }}</h1>
+          <p>{{ APP_TITLE }}</p>
+          <p class="muted">{{ ORG_NAME }} &middot; {{ ORG_PLACE }}</p>
+        </div>
+      </div>
+
+      {% if role_key == 'student' %}
+        <ul class="auth-feature-list">
+          <li>{{ ui.icon('search', 18) }} Browse and search every AGC campus event</li>
+          <li>{{ ui.icon('ticket', 18) }} Register and receive a QR coded digital ticket</li>
+          <li>{{ ui.icon('clipboard', 18) }} Track your attendance status</li>
+          <li>{{ ui.icon('certificate', 18) }} Download participation certificates</li>
+        </ul>
+      {% elif role_key == 'faculty' %}
+        <ul class="auth-feature-list">
+          <li>{{ ui.icon('dashboard', 18) }} Dedicated faculty dashboard</li>
+          <li>{{ ui.icon('calendar', 18) }} Review all upcoming AGC events</li>
+          <li>{{ ui.icon('users', 18) }} Inspect registrations and attendee lists</li>
+          <li>{{ ui.icon('clipboard', 18) }} Verify attendance and read participant feedback</li>
+        </ul>
+      {% else %}
+        <ul class="auth-feature-list">
+          <li>{{ ui.icon('plus', 18) }} Create, edit and cancel campus events</li>
+          <li>{{ ui.icon('users', 18) }} Manage registrations and attendees</li>
+          <li>{{ ui.icon('clipboard', 18) }} Verify attendance and issue certificates</li>
+          <li>{{ ui.icon('chart', 18) }} Event statistics and feedback reports</li>
+        </ul>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="auth-form-panel">
+    <div class="auth-card">
+      <span class="role-pill role-pill--{{ role_key }}">{{ role_label }}</span>
+      <h2 class="auth-card__title">{{ welcome }}</h2>
+      <p class="muted">{{ APP_NAME }} &middot; {{ ORG_NAME }}</p>
+
+      <form method="post" action="{{ url_for(endpoint) }}" class="form" novalidate>
+        <input type="hidden" name="next" value="{{ next_url }}">
+        <div class="form__row">
+          <label for="email">Email address</label>
+          <input type="email" id="email" name="email" required autocomplete="username"
+                 placeholder="{{ 'student@agc.edu.in' if role_key == 'student' else 'name@agc.edu.in' }}"
+                 value="{{ form.email or '' }}">
+        </div>
+
+        <div class="form__row">
+          <label for="password">Password</label>
+          <div class="field-with-action">
+            <input type="password" id="password" name="password" required autocomplete="current-password"
+                   placeholder="Enter your password">
+            <button type="button" class="icon-btn" data-toggle-password="#password"
+                    aria-label="Show password" title="Show password">{{ ui.icon('eye', 18) }}</button>
+          </div>
+        </div>
+
+        <label class="checkbox">
+          <input type="checkbox" name="remember" value="1" {% if form.remember %}checked{% endif %}>
+          <span>Keep me signed in on this device</span>
+        </label>
+
+        <button type="submit" class="btn btn-block {% if role_key == 'student' %}btn-primary{% elif role_key == 'faculty' %}btn-faculty{% else %}btn-organizer{% endif %} btn-lg">
+          {{ ui.icon('login', 18) }} Sign in as {{ role_label }}
+        </button>
+      </form>
+
+      <div class="auth-divider"><span>Don't have an account?</span></div>
+      <a class="btn btn-block {% if role_key == 'student' %}btn-primary{% elif role_key == 'faculty' %}btn-faculty{% else %}btn-organizer{% endif %}" href="{{ url_for(register_endpoint) }}">
+        {{ ui.icon('plus', 17) }} Create {{ role_label }} account
+      </a>
+
+      <div class="auth-switch">
+        <a href="{{ url_for('auth.login') }}">{{ ui.icon('refresh', 15) }} Change login type</a>
+        <a href="{{ url_for('main.home') }}">{{ ui.icon('home', 15) }} Back to welcome</a>
+      </div>
+
+      <div class="auth-demo">
+        <p class="auth-demo__title">Demo credentials ({{ APP_NAME }})</p>
+        <code>{{ role_key }}@agc.edu.in</code> &nbsp;/&nbsp; <code>agc@2026</code>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

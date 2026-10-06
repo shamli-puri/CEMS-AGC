@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% import "_macros.html" as m %}
+{% block title %}Faculty Dashboard — {{ APP_NAME }} | {{ APP_TITLE }}{% endblock %}
+{% block body_class %}app-body app-body--faculty{% endblock %}
+
+{% block content %}
+<div class="page-head page-head--faculty">
+  <div>
+    <span class="role-pill role-pill--faculty">Faculty Portal</span>
+    <h1>{{ current_user.name }}</h1>
+    <p class="muted">{{ current_user.designation or 'Faculty' }} &middot; {{ current_user.department or ORG_NAME }} &middot; {{ ORG_NAME }}</p>
+  </div>
+  <div class="page-head__actions">
+    <a class="btn btn-ghost" href="{{ url_for('faculty.events') }}">{{ ui.icon('calendar', 17) }} All events</a>
+    <a class="btn btn-faculty" href="{{ url_for('faculty.attendance_records') }}">{{ ui.icon('clipboard', 17) }} Attendance records</a>
+  </div>
+</div>
+
+{% if pending_rows %}
+<section class="queue-summary">
+  <span class="queue-summary__icon">{{ ui.icon('clipboard', 22) }}</span>
+  <div class="queue-summary__text">
+    <h2>Attendance verification needed</h2>
+    <p>
+      {{ pending_rows | length }} event(s) still have unmarked participants.
+      Verify attendance to keep records accurate.
+    </p>
+  </div>
+  <a class="btn btn-faculty" href="{{ url_for('faculty.attendance_records') }}">
+    {{ ui.icon('check', 16) }} Review attendance
+  </a>
+</section>
+{% endif %}
+
+<div class="grid grid--4 stat-grid">
+  {{ m.stat_card('Total AGC Events', stats.total_events, 'calendar', hint='All campus events', tone='faculty',
+      endpoint='faculty.events') }}
+  {{ m.stat_card('Upcoming Events', stats.upcoming_events, 'clock', hint='Upcoming or ongoing', tone='info',
+      endpoint='faculty.events', params={'status': 'UPCOMING'}) }}
+  {{ m.stat_card('Total Registrations', stats.total_registrations, 'users', hint='Confirmed seats', tone='primary',
+      endpoint='faculty.events') }}
+  {{ m.stat_card('Total Attendees', stats.total_attendees, 'check-circle',
+      hint='Pending: ' ~ stats.pending_attendance, tone='success',
+      endpoint='faculty.attendance_records') }}
+</div>
+
+<div class="grid grid--2 grid--main">
+  <div class="stack">
+    <section class="card card--faculty">
+      <div class="card__head">
+        <h3>{{ ui.icon('clipboard', 19) }} Attendance pending verification</h3>
+        <a class="btn btn-sm btn-ghost" href="{{ url_for('faculty.attendance_records') }}">All records</a>
+      </div>
+      {% if pending_rows %}
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Event</th><th>Date</th><th>Unmarked</th><th class="right">Action</th></tr></thead>
+            <tbody>
+              {% for event, unmarked, total in pending_rows %}
+                <tr>
+                  <td>
+                    <a class="link-strong" href="{{ url_for('faculty.event_detail', event_id=event.id) }}">{{ event.title }}</a>
+                    <small class="block muted">{{ event.category }} &middot; {{ event.venue }}</small>
+                  </td>
+                  <td class="nowrap">{{ event.event_date | date_fmt }}<small class="block">{{ event.status }}</small></td>
+                  <td><span class="badge badge-important">{{ unmarked }} / {{ total }}</span></td>
+                  <td class="right">
+                    <a class="btn btn-sm btn-faculty" href="{{ url_for('faculty.attendance', event_id=event.id) }}">
+                      {{ ui.icon('check', 15) }} Mark
+                    </a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty">
+          {{ ui.icon('check-circle', 32) }}
+          <p><strong>All attendance has been verified.</strong></p>
+          <p class="muted">Nothing is pending right now.</p>
+        </div>
+      {% endif %}
+    </section>
+
+    <section class="card">
+      <div class="card__head">
+        <h3>{{ ui.icon('calendar', 19) }} Upcoming AGC events</h3>
+        <a class="btn btn-sm btn-ghost" href="{{ url_for('faculty.events') }}">View all {{ ui.icon('arrow-right', 15) }}</a>
+      </div>
+      {% if upcoming_events %}
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Event</th><th>Schedule</th><th>Venue</th><th>Registered</th><th class="right">Actions</th></tr></thead>
+            <tbody>
+              {% for event in upcoming_events %}
+                <tr>
+                  <td>
+                    <a class="link-strong" href="{{ url_for('faculty.event_detail', event_id=event.id) }}">{{ event.title }}</a>
+                    <small class="block muted">{{ event.category }} &middot; organiser {{ event.organizer.name }}</small>
+                  </td>
+                  <td class="nowrap">{{ event.event_date | date_fmt }}<small class="block muted">{{ event.time_range }}</small></td>
+                  <td>{{ event.venue }}</td>
+                  <td><span class="badge badge-info">{{ event.seats_taken }}/{{ event.max_capacity }}</span></td>
+                  <td class="right nowrap">
+                    <a class="btn btn-sm btn-ghost" href="{{ url_for('faculty.event_registrations', event_id=event.id) }}">
+                      {{ ui.icon('users', 15) }} List
+                    </a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="muted">No upcoming events are scheduled.</p>
+      {% endif %}
+    </section>
+
+    <section class="card">
+      <div class="card__head">
+        <h3>{{ ui.icon('feedback', 19) }} Recent participant feedback</h3>
+        <a class="btn btn-sm btn-ghost" href="{{ url_for('faculty.feedback') }}">All feedback</a>
+      </div>
+      {% if recent_feedback %}
+        <div class="feedback-list">
+          {% for f in recent_feedback %}
+            <article class="feedback-entry">
+              <div class="feedback-entry__head">
+                <div>
+                  <strong>{{ f.event.title }}</strong>
+                  <small class="muted">{{ f.student.name }} &middot; {{ f.created_at | datetime_fmt }}</small>
+                </div>
+                {{ m.star_row(f.rating) }}
+              </div>
+              <p>{{ f.comments | shorten(180) }}</p>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="muted">No feedback has been submitted yet.</p>
+      {% endif %}
+    </section>
+  </div>
+
+  <div class="stack">
+    <section class="card card--faculty">
+      <div class="card__head"><h3>{{ ui.icon('user', 19) }} Faculty profile</h3></div>
+      <div class="person">
+        <span class="avatar avatar--lg">{{ current_user.initials }}</span>
+        <div>
+          <strong>{{ current_user.name }}</strong>
+          <small class="muted">{{ current_user.display_meta }}</small>
+        </div>
+      </div>
+      <div class="progress"><div class="progress__bar"><span style="width: {{ profile_score }}%"></span></div></div>
+      <p class="muted small">{{ profile_score }}% profile complete</p>
+      <div class="stack-sm">
+        <a class="btn btn-sm btn-ghost btn-block" href="{{ url_for('profile.view') }}">{{ ui.icon('eye', 15) }} View profile</a>
+        <a class="btn btn-sm btn-ghost btn-block" href="{{ url_for('profile.edit') }}">{{ ui.icon('edit', 15) }} Edit profile</a>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card__head"><h3>{{ ui.icon('clock', 19) }} Recently completed events</h3></div>
+      {% if recent_events %}
+        <ul class="notice-list">
+          {% for event in recent_events %}
+            <li>
+              <a href="{{ url_for('faculty.event_detail', event_id=event.id) }}">
+                <span class="dot dot--{{ 'success' if event.status == 'COMPLETED' else 'danger' if event.status == 'CANCELLED' else 'primary' }}"></span>
+                <strong>{{ event.title }}</strong>
+                <small class="muted">{{ event.event_date | date_fmt }} &middot; {{ event.seats_taken }} registered</small>
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="muted">No events yet.</p>
+      {% endif %}
+    </section>
+
+    <section class="card">
+      <div class="card__head"><h3>{{ ui.icon('bell', 19) }} Faculty notices</h3></div>
+      {% if notices %}
+        <ul class="notice-list">
+          {% for n in notices %}
+            <li>
+              <a href="{{ url_for('faculty.notice_detail', notice_id=n.id) }}">
+                {% if n.is_important %}<span class="dot dot--danger"></span>{% else %}<span class="dot"></span>{% endif %}
+                <strong>{{ n.title }}</strong>
+                <small class="muted">{{ n.published_at | datetime_fmt }}</small>
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="muted">No notices for faculty.</p>
+      {% endif %}
+    </section>
+
+    <section class="card">
+      <div class="card__head"><h3>{{ ui.icon('grid', 19) }} Faculty tools</h3></div>
+      <div class="quick-actions">
+        <a class="quick-action quick-action--faculty" href="{{ url_for('faculty.events') }}">{{ ui.icon('calendar', 20) }}<span>Events</span></a>
+        <a class="quick-action quick-action--faculty" href="{{ url_for('faculty.attendance_records') }}">{{ ui.icon('clipboard', 20) }}<span>Attendance</span></a>
+        <a class="quick-action quick-action--faculty" href="{{ url_for('faculty.feedback') }}">{{ ui.icon('feedback', 20) }}<span>Feedback</span></a>
+        <a class="quick-action quick-action--faculty" href="{{ url_for('faculty.notices') }}">{{ ui.icon('bell', 20) }}<span>Notices</span></a>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

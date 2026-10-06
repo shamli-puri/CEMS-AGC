@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% block title %}Certificates — {{ event.title }} | {{ APP_NAME }}{% endblock %}
+{% block body_class %}app-body app-body--organizer{% endblock %}
+
+{% block content %}
+<div class="page-head page-head--organizer">
+  <div>
+    <h1>Certificates</h1>
+    <p class="muted">{{ event.title }} &middot; {{ event.event_date | date_fmt }} &middot; {{ event.venue }}</p>
+  </div>
+  <div class="page-head__actions">
+    {% if eligible %}
+      <form method="post" action="{{ url_for('organizer.event_certificates', event_id=event.id) }}" class="inline-form"
+            data-confirm="Issue {{ eligible | length }} certificate(s) now?">
+        <button type="submit" class="btn btn-accent">{{ ui.icon('certificate', 17) }} Issue {{ eligible | length }} certificate(s)</button>
+      </form>
+    {% endif %}
+    <a class="btn btn-ghost" href="{{ url_for('organizer.event_detail', event_id=event.id) }}">{{ ui.icon('chevron-left', 16) }} Event</a>
+  </div>
+</div>
+
+{% if not event.certificate_eligible %}
+  <div class="alert alert--warning">
+    {{ ui.icon('alert', 18) }}
+    <span>Certificates are disabled for this event. Enable the option while editing the event to issue certificates.</span>
+  </div>
+{% endif %}
+
+<div class="mini-stat-grid card">
+  <div><strong>{{ stats.present }}</strong><span>Present</span></div>
+  <div><strong>{{ certificates | length }}</strong><span>Issued</span></div>
+  <div><strong>{{ eligible | length }}</strong><span>Eligible now</span></div>
+  <div><strong>{{ stats.confirmed }}</strong><span>Registered</span></div>
+</div>
+
+{% if certificates %}
+  <div class="table-wrap card">
+    <table class="table">
+      <thead><tr><th>Student</th><th>Roll no</th><th>Certificate ID</th><th>Issued on</th><th>Issued by</th><th class="right">Actions</th></tr></thead>
+      <tbody>
+        {% for c in certificates %}
+          <tr>
+            <td class="link-strong">{{ c.student.name }}<small class="block muted">{{ c.student.email }}</small></td>
+            <td>{{ c.student.roll_number or '-' }}</td>
+            <td><code class="code-chip">{{ c.certificate_id }}</code></td>
+            <td class="nowrap">{{ c.issue_date_label }}</td>
+            <td>{{ c.issued_by.name if c.issued_by else '-' }}</td>
+            <td class="right nowrap">
+              <a class="btn btn-sm btn-accent" href="{{ url_for('organizer.certificate_pdf', certificate_id=c.id) }}">{{ ui.icon('download', 14) }} PDF</a>
+              <form method="post" action="{{ url_for('organizer.certificate_send', certificate_id=c.id) }}" class="inline-form">
+                <button type="submit" class="btn btn-sm btn-ghost">{{ ui.icon('mail', 14) }} Email</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="card empty">
+    {{ ui.icon('certificate', 40) }}
+    <p><strong>No certificates issued for this event yet.</strong></p>
+    <p class="muted">
+      {% if eligible %}
+        {{ eligible | length }} participant(s) are eligible &mdash; issue them using the button above.
+      {% else %}
+        Certificates appear once attendance is verified as Present for participants.
+      {% endif %}
+    </p>
+    <a class="btn btn-organizer btn-sm" href="{{ url_for('organizer.attendance', event_id=event.id) }}">
+      {{ ui.icon('clipboard', 15) }} Verify attendance
+    </a>
+  </div>
+{% endif %}
+{% endblock %}

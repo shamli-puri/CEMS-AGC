@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% block title %}{{ code }} — {{ APP_NAME }} | {{ APP_TITLE }}{% endblock %}
+
+{% block content %}
+<div class="error-page">
+  <span class="error-page__code">{{ code }}</span>
+  <h1>{{ title }}</h1>
+  <p class="muted">{{ message }}</p>
+  <div class="page-head__actions center">
+    <a class="btn btn-primary" href="{{ url_for('main.role_home') }}">{{ ui.icon('dashboard', 17) }} Go to dashboard</a>
+    <a class="btn btn-ghost" href="{{ url_for('main.about') }}">{{ ui.icon('info', 17) }} About {{ APP_NAME }}</a>
+  </div>
+  <p class="muted small mt">{{ APP_NAME }} &mdash; {{ APP_TITLE }} &middot; {{ ORG_NAME }}</p>
+</div>
+{% endblock %}

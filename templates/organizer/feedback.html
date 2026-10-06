@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% import "_macros.html" as m %}
+{% block title %}Feedback — {{ APP_NAME }} | {{ APP_TITLE }}{% endblock %}
+{% block body_class %}app-body app-body--organizer{% endblock %}
+
+{% block content %}
+<div class="page-head page-head--organizer">
+  <div>
+    <h1>Event Feedback</h1>
+    <p class="muted">Ratings and comments submitted by students for your events.</p>
+  </div>
+  <a class="btn btn-organizer" href="{{ url_for('organizer.dashboard') }}">{{ ui.icon('chevron-left', 16) }} Dashboard</a>
+</div>
+
+<div class="grid grid--3 stat-grid">
+  <div class="stat-card stat-card--accent">
+    <div class="stat-card__icon">{{ ui.icon('star', 22) }}</div>
+    <div class="stat-card__text"><span class="stat-card__value">{{ average or '-' }}</span><span class="stat-card__label">Average rating</span></div>
+  </div>
+  <div class="stat-card stat-card--primary">
+    <div class="stat-card__icon">{{ ui.icon('feedback', 22) }}</div>
+    <div class="stat-card__text"><span class="stat-card__value">{{ total }}</span><span class="stat-card__label">Responses</span></div>
+  </div>
+  <div class="stat-card stat-card--success">
+    <div class="stat-card__icon">{{ ui.icon('check-circle', 22) }}</div>
+    <div class="stat-card__text"><span class="stat-card__value">{{ distribution['5'] }}</span><span class="stat-card__label">Five star reviews</span></div>
+  </div>
+</div>
+
+<form class="toolbar" method="get" action="{{ url_for('organizer.feedback') }}">
+  <div class="toolbar__search">
+    {{ ui.icon('search', 17) }}
+    <input type="search" name="q" value="{{ filters.q or '' }}" placeholder="Search comments…" aria-label="Search feedback">
+  </div>
+  <select name="event_id" aria-label="Filter by event">
+    <option value="">All my events</option>
+    {% for e in events %}
+      <option value="{{ e.id }}" {% if event_filter == e.id %}selected{% endif %}>{{ e.title | shorten(38) }}</option>
+    {% endfor %}
+  </select>
+  <select name="rating" aria-label="Filter by rating">
+    <option value="all">All ratings</option>
+    {% for i in range(5, 0, -1) %}
+      <option value="{{ i }}" {% if filters.rating == i | string %}selected{% endif %}>{{ i }} star{{ 's' if i > 1 }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn btn-organizer">{{ ui.icon('filter', 16) }} Apply</button>
+  <a class="btn btn-ghost" href="{{ url_for('organizer.feedback') }}">{{ ui.icon('refresh', 16) }} Reset</a>
+</form>
+
+<div class="card">
+  <div class="card__head"><h3>{{ ui.icon('pie', 19) }} Rating distribution</h3></div>
+  <div class="bar-chart">
+    {% for i in range(5, 0, -1) %}
+      {% set count = distribution[i | string] %}
+      {% set pct = ((count / total) * 100) | round(0, 'floor') if total else 0 %}
+      <div class="bar-chart__row">
+        <span class="bar-chart__label">{{ i }} {{ ui.icon('star', 13) }}</span>
+        <div class="bar-chart__track"><span style="width: {{ pct }}%"></span></div>
+        <span class="bar-chart__value">{{ count }}</span>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+{% if feedback_rows %}
+  <div class="card">
+    <div class="card__head"><h3>{{ ui.icon('list', 19) }} All responses</h3></div>
+    <div class="feedback-list">
+      {% for f in feedback_rows %}
+        <article class="feedback-entry">
+          <div class="feedback-entry__head">
+            <div>
+              <strong>{{ f.student.name }}</strong>
+              <small class="muted">{{ f.student.department }} &middot; {{ f.created_at | datetime_fmt }}</small>
+            </div>
+            {{ m.star_row(f.rating) }}
+          </div>
+          <p class="link-strong"><a href="{{ url_for('organizer.event_detail', event_id=f.event_id) }}">{{ f.event.title }}</a></p>
+          <p>{{ f.comments }}</p>
+          <a class="btn btn-sm btn-ghost" href="{{ url_for('organizer.feedback_detail', feedback_id=f.id) }}">
+            {{ ui.icon('eye', 14) }} Open
+          </a>
+        </article>
+      {% endfor %}
+    </div>
+  </div>
+{% else %}
+  <div class="card empty">
+    {{ ui.icon('feedback', 40) }}
+    <p><strong>No feedback matches your filters.</strong></p>
+    <p class="muted">Feedback appears after students attend an event and submit a rating.</p>
+    <a class="btn btn-organizer btn-sm" href="{{ url_for('organizer.feedback') }}">{{ ui.icon('refresh', 15) }} Reset filters</a>
+  </div>
+{% endif %}
+{% endblock %}

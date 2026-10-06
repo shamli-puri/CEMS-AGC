@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% block title %}Participants — {{ event.title }} | {{ APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <span class="badge {{ event.status_class() }}">{{ event.status }}</span>
+    <h1>{{ event.title }}</h1>
+    <p class="muted">{{ event.event_date | date_fmt }} &middot; {{ event.time_range }} &middot; {{ event.venue }}</p>
+  </div>
+  <div class="page-head__actions">
+    <a class="btn btn-ghost" href="{{ url_for('student.ticket', registration_id=my_registration_id) }}">
+      {{ ui.icon('qr', 16) }} My ticket
+    </a>
+    <a class="btn btn-primary" href="{{ url_for('student.event_detail', event_id=event.id) }}">
+      {{ ui.icon('chevron-left', 16) }} Event details
+    </a>
+  </div>
+</div>
+
+<div class="mini-stat-grid card">
+  <div><strong>{{ stats.confirmed }}</strong><span>Registered</span></div>
+  <div><strong>{{ stats.capacity }}</strong><span>Capacity</span></div>
+  <div><strong>{{ event.seats_left }}</strong><span>Seats left</span></div>
+  <div><strong>{{ stats.present }}</strong><span>Present</span></div>
+</div>
+
+<div class="table-wrap card">
+  <table class="table">
+    <thead><tr><th>#</th><th>Student</th><th>Roll number</th><th>Department</th><th>Year</th><th>Attendance</th></tr></thead>
+    <tbody>
+      {% for r in rows %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td class="link-strong">{{ r.student.name }} {% if r.student.id == current_user.id %}<span class="badge badge-info">You</span>{% endif %}</td>
+          <td>{{ r.student.roll_number or '-' }}</td>
+          <td>{{ r.student.department or '-' }}</td>
+          <td>{{ r.student.year_of_study or '-' }}</td>
+          <td><span class="badge {{ r.attendance_class }}">{{ r.attendance_status }}</span></td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

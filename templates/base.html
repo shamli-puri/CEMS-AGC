@@ -1,0 +1,174 @@
+{% import "_icons.html" as ui %}
+{% import "_macros.html" as m %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ APP_NAME }} — {{ APP_TITLE }}{% endblock %}</title>
+  <meta name="description" content="{{ APP_NAME }} — {{ APP_TITLE }} for {{ ORG_NAME }}, {{ ORG_PLACE }}.">
+  <link rel="icon" href="{{ url_for('static', filename='images/favicon.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body class="{% block body_class %}app-body{% endblock %}">
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<div class="layout {% if not current_user.is_authenticated %}layout--plain{% endif %}">
+
+  {% if current_user.is_authenticated %}
+  <!-- ================= SIDEBAR ================= -->
+  <aside class="sidebar" id="cems-sidebar">
+    <div class="sidebar__brand">
+      {{ ui.brand_mark(38, 'brand-mark--sidebar') }}
+      <div class="sidebar__brand-text">
+        <strong>{{ APP_NAME }}</strong>
+        <small>AGC Campus Event System</small>
+      </div>
+      <button type="button" class="icon-btn sidebar__close" data-sidebar-toggle aria-label="Close navigation">
+        {{ ui.icon('x', 18) }}
+      </button>
+    </div>
+
+    <div class="sidebar__role">
+      <span class="role-pill role-pill--{{ current_user.role | lower }}">{{ current_user.role_label }}</span>
+      <span class="sidebar__org">{{ ORG_SHORT }}</span>
+    </div>
+
+    <nav class="sidebar__nav" aria-label="Main navigation">
+      <p class="sidebar__heading">Overview</p>
+      {% if current_user.is_student %}
+        {{ m.nav_link('student.dashboard', 'Dashboard', 'dashboard') }}
+        {{ m.nav_link('events.catalogue', 'Event Catalogue', 'grid') }}
+      {% elif current_user.is_faculty %}
+        {{ m.nav_link('faculty.dashboard', 'Dashboard', 'dashboard') }}
+        {{ m.nav_link('faculty.events', 'All Events', 'calendar') }}
+      {% else %}
+        {{ m.nav_link('organizer.dashboard', 'Dashboard', 'dashboard') }}
+        {{ m.nav_link('organizer.events', 'My Events', 'calendar') }}
+        {{ m.nav_link('organizer.create_event', 'Create Event', 'plus') }}
+      {% endif %}
+
+      <p class="sidebar__heading">
+        {% if current_user.is_student %}My Activity{% elif current_user.is_faculty %}Supervision{% else %}Operations{% endif %}
+      </p>
+
+      {% if current_user.is_student %}
+        {{ m.nav_link('student.registrations', 'My Registrations', 'ticket') }}
+        {{ m.nav_link('student.attendance', 'Attendance', 'clipboard') }}
+        {{ m.nav_link('student.certificates', 'Certificates', 'certificate') }}
+        {{ m.nav_link('student.feedback_list', 'Feedback', 'feedback') }}
+      {% elif current_user.is_faculty %}
+        {{ m.nav_link('faculty.events', 'Event Monitor', 'event') }}
+        {{ m.nav_link('faculty.attendance_records', 'Attendance Records', 'clipboard') }}
+        {{ m.nav_link('faculty.feedback', 'Feedback', 'feedback') }}
+        {{ m.nav_link('faculty.notices', 'Notices', 'bell') }}
+      {% else %}
+        {{ m.nav_link('organizer.participants', 'Participants', 'users') }}
+        {{ m.nav_link('organizer.attendance_records', 'Attendance Records', 'clipboard') }}
+        {{ m.nav_link('organizer.statistics', 'Statistics', 'chart') }}
+        {{ m.nav_link('organizer.feedback', 'Feedback', 'feedback') }}
+        {{ m.nav_link('organizer.notices', 'Notices', 'bell') }}
+      {% endif %}
+
+      <p class="sidebar__heading">Account</p>
+      {{ m.nav_link('notices.index', 'Notice Board', 'megaphone') }}
+      {{ m.nav_link('profile.view', 'My Profile', 'user') }}
+      <form method="post" action="{{ url_for('auth.logout') }}" class="sidebar__logout">
+        <button type="submit" class="nav-link nav-link--danger">{{ ui.icon('logout', 18) }}<span>Logout</span></button>
+      </form>
+    </nav>
+
+    <div class="sidebar__foot">
+      <p><strong>{{ ORG_NAME }}</strong></p>
+      <p>{{ ORG_PLACE }}</p>
+      <p class="muted">v{{ APP_VERSION }} &middot; {{ APP_NAME }}</p>
+    </div>
+  </aside>
+  <div class="sidebar-overlay" data-sidebar-toggle hidden></div>
+  {% endif %}
+
+  <!-- ================= MAIN ================= -->
+  <div class="main-wrap">
+    {% if current_user.is_authenticated %}
+    <header class="topbar">
+      <button type="button" class="icon-btn topbar__menu" data-sidebar-toggle aria-label="Open navigation">
+        {{ ui.icon('menu', 20) }}
+      </button>
+
+      <form class="topbar__search" action="{{ url_for('events.search') }}" method="get" role="search">
+        {{ ui.icon('search', 17) }}
+        <input type="search" name="q" placeholder="Search AGC campus events, venues, categories…"
+               value="{{ request.args.get('q', '') }}" aria-label="Search events">
+        <button type="submit" class="btn btn-sm btn-primary">Search</button>
+      </form>
+
+      <div class="topbar__right">
+        <a class="icon-btn" href="{{ url_for('notices.index') }}" title="Notice board" aria-label="Notice board">
+          {{ ui.icon('bell', 19) }}
+        </a>
+        <a class="user-chip" href="{{ url_for('profile.view') }}">
+          <span class="avatar avatar--sm">{{ current_user.initials }}</span>
+          <span class="user-chip__text">
+            <strong>{{ current_user.name }}</strong>
+            <small>{{ current_user.role_label }}</small>
+          </span>
+        </a>
+      </div>
+    </header>
+    {% endif %}
+
+    <main id="main-content" class="content {% block content_class %}content--with-sidebar{% endblock %}">
+      {% include "_flash.html" %}
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+      <div class="footer__brand">
+        {{ ui.brand_mark(30) }}
+        <div>
+          <strong>{{ APP_NAME }} — {{ APP_TITLE }}</strong>
+          <small>{{ ORG_NAME }}, {{ ORG_PLACE }}</small>
+        </div>
+      </div>
+      <nav class="footer__links" aria-label="Footer navigation">
+        <a href="{{ url_for('main.about') }}">About CEMS</a>
+        <a href="{{ url_for('notices.index') }}">Notices</a>
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('profile.view') }}">Profile</a>
+          <a href="{{ url_for('auth.logout') }}">Logout</a>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}">Login</a>
+          <a href="{{ url_for('main.home') }}">Home</a>
+        {% endif %}
+      </nav>
+      <p class="footer__note">
+        &copy; {{ current_year }} {{ ORG_NAME }}. Student / Faculty / Organizer portal &middot;
+        Roles are strictly separated and access-controlled.
+      </p>
+    </footer>
+  </div>
+</div>
+
+{% if dev_emails %}
+<div class="devmail-tray" data-devmail>
+  <button type="button" class="devmail-tray__toggle" data-devmail-toggle>
+    {{ ui.icon('mail', 16) }} {{ dev_emails | length }} development email(s) logged
+  </button>
+  <div class="devmail-tray__body" hidden>
+    {% for item in dev_emails %}
+      <details>
+        <summary>{{ item.subject }}</summary>
+        <p class="muted">To: {{ item.to }}</p>
+        <pre>{{ item.body }}</pre>
+      </details>
+    {% endfor %}
+    <p class="muted small">SMTP is not configured, so emails are stored in instance/emails.log and shown here.</p>
+  </div>
+</div>
+{% endif %}
+
+<script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

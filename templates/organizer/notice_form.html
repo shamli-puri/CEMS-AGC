@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% block title %}{{ 'Edit' if notice else 'Create' }} Notice — {{ APP_NAME }}{% endblock %}
+{% block body_class %}app-body app-body--organizer{% endblock %}
+
+{% block content %}
+<div class="page-head page-head--organizer">
+  <div>
+    <h1>{{ 'Edit notice' if notice else 'Publish a new notice' }}</h1>
+    <p class="muted">Announcements are visible to the selected audience on {{ ORG_NAME }}.</p>
+  </div>
+  <div class="page-head__actions">
+    <a class="btn btn-ghost" href="{{ url_for('organizer.notices') }}">{{ ui.icon('chevron-left', 16) }} Notice board</a>
+  </div>
+</div>
+
+<form method="post" class="card form" novalidate
+      action="{{ url_for('organizer.edit_notice', notice_id=notice.id) if notice else url_for('organizer.create_notice') }}">
+  <div class="form__row">
+    <label for="title">Title <span class="req">*</span></label>
+    <input type="text" id="title" name="title" required maxlength="180"
+           placeholder="e.g. Registrations open for AGC Annual Technical Symposium" value="{{ form.title or '' }}">
+  </div>
+
+  <div class="form__row">
+    <label for="description">Description <span class="req">*</span></label>
+    <textarea id="description" name="description" rows="6" required minlength="10"
+              placeholder="Write the full announcement for students and faculty.">{{ form.description or '' }}</textarea>
+  </div>
+
+  <div class="form__grid">
+    <div class="form__row">
+      <label for="audience">Audience <span class="req">*</span></label>
+      <select id="audience" name="audience" required>
+        {% for a in audiences %}
+          <option value="{{ a }}" {% if form.audience == a %}selected{% endif %}>
+            {{ 'Everyone' if a == 'ALL' else a.title() }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form__row form__row--check">
+      <label class="checkbox">
+        <input type="checkbox" name="is_important" value="1" {% if form.is_important %}checked{% endif %}>
+        <span>Mark as important (pinned at the top of every notice board)</span>
+      </label>
+    </div>
+  </div>
+
+  <div class="form__actions">
+    <button type="submit" class="btn btn-organizer btn-lg">
+      {{ ui.icon('check', 18) }} {{ 'Save changes' if notice else 'Publish notice' }}
+    </button>
+    <a class="btn btn-ghost" href="{{ url_for('organizer.notices') }}">Cancel</a>
+  </div>
+</form>
+
+{% if notice %}
+  <section class="card">
+    <div class="card__head"><h3>{{ ui.icon('alert', 19) }} Danger zone</h3></div>
+    <p class="muted">Deleting a notice removes it for every role immediately.</p>
+    <form method="post" action="{{ url_for('organizer.delete_notice', notice_id=notice.id) }}"
+          data-confirm="Delete the notice &quot;{{ notice.title }}&quot;?">
+      <button type="submit" class="btn btn-danger">{{ ui.icon('trash', 16) }} Delete notice</button>
+    </form>
+  </section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% block title %}{{ notice.title }} — {{ APP_NAME }}{% endblock %}
+{% block body_class %}app-body app-body--organizer{% endblock %}
+
+{% block content %}
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+  <a href="{{ url_for('organizer.dashboard') }}">Dashboard</a> {{ ui.icon('chevron-right', 13) }}
+  <a href="{{ url_for('organizer.notices') }}">Notices</a> {{ ui.icon('chevron-right', 13) }}
+  <span>{{ notice.title | shorten(40) }}</span>
+</nav>
+
+<article class="card">
+  <div class="chip-row">
+    {% if notice.is_important %}<span class="badge badge-important">{{ ui.icon('alert', 13) }} Important notice</span>{% endif %}
+    <span class="chip">{{ notice.audience }}</span>
+    <span class="chip">{{ ui.icon('calendar', 14) }} {{ notice.published_at | datetime_fmt }}</span>
+  </div>
+  <h1 class="mt-sm">{{ notice.title }}</h1>
+  <p class="muted">Posted by {{ notice.author_name }} &middot; {{ ORG_NAME }}</p>
+  <div class="prose">{{ notice.description }}</div>
+</article>
+
+<div class="page-head__actions">
+  {% if notice.author_id == current_user.id %}
+    <a class="btn btn-organizer" href="{{ url_for('organizer.edit_notice', notice_id=notice.id) }}">{{ ui.icon('edit', 16) }} Edit</a>
+    <form method="post" action="{{ url_for('organizer.delete_notice', notice_id=notice.id) }}" class="inline-form"
+          data-confirm="Delete the notice &quot;{{ notice.title }}&quot;?">
+      <button type="submit" class="btn btn-danger">{{ ui.icon('trash', 16) }} Delete</button>
+    </form>
+  {% endif %}
+  <a class="btn btn-ghost" href="{{ url_for('organizer.notices') }}">{{ ui.icon('chevron-left', 16) }} Notice board</a>
+</div>
+{% endblock %}

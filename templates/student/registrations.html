@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% block title %}My Registrations — {{ APP_NAME }} | {{ APP_TITLE }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>My Registrations</h1>
+    <p class="muted">Every AGC event you registered for, with ticket, attendance and cancellation controls.</p>
+  </div>
+  <a class="btn btn-ghost" href="{{ url_for('student.dashboard') }}">{{ ui.icon('chevron-left', 16) }} Dashboard</a>
+</div>
+
+<div class="grid grid--4 stat-grid">
+  <div class="stat-card stat-card--primary">
+    <div class="stat-card__icon">{{ ui.icon('ticket', 22) }}</div>
+    <div class="stat-card__text"><span class="stat-card__value">{{ stats.confirmed }}</span><span class="stat-card__label">Confirmed</span></div>
+  </div>
+  <div class="stat-card stat-card--info">
+    <div class="stat-card__icon">{{ ui.icon('calendar', 22) }}</div>
+    <div class="stat-card__text"><span class="stat-card__value">{{ stats.upcoming }}</span><span class="stat-card__label">Upcoming</span></div>
+  </div>
+  <div class="stat-card stat-card--success">
+    <div class="stat-card__icon">{{ ui.icon('check-circle', 22) }}</div>
+    <div class="stat-card__text"><span class="stat-card__value">{{ stats.attended }}</span><span class="stat-card__label">Attended</span></div>
+  </div>
+  <div class="stat-card stat-card--danger">
+    <div class="stat-card__icon">{{ ui.icon('x-circle', 22) }}</div>
+    <div class="stat-card__text"><span class="stat-card__value">{{ stats.cancelled }}</span><span class="stat-card__label">Cancelled</span></div>
+  </div>
+</div>
+
+<div class="toolbar toolbar--tabs">
+  {% set scopes = [('all', 'All'), ('upcoming', 'Upcoming'), ('past', 'Past'), ('attended', 'Attended'), ('cancelled', 'Cancelled')] %}
+  <div class="tab-group">
+    {% for key, label in scopes %}
+      <a class="tab {% if scope == key %}tab--active{% endif %}"
+         href="{{ url_for('student.registrations', scope=key) }}">{{ label }}</a>
+    {% endfor %}
+  </div>
+  <a class="btn btn-primary btn-sm" href="{{ url_for('student.events') }}">{{ ui.icon('plus', 15) }} Register for more</a>
+</div>
+
+{% if registrations %}
+  <div class="table-wrap card">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Event</th><th>Date &amp; Time</th><th>Venue</th><th>Registration ID</th>
+          <th>Status</th><th>Attendance</th><th class="right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in registrations %}
+          <tr class="{% if r.is_cancelled %}row--muted{% endif %}">
+            <td>
+              <a class="link-strong" href="{{ url_for('student.event_detail', event_id=r.event.id) }}">{{ r.event.title }}</a>
+              <small class="block muted">{{ r.event.category }} &middot; organised by {{ r.event.organizer.name }}</small>
+            </td>
+            <td class="nowrap">{{ r.event.event_date | date_fmt }}<small class="block muted">{{ r.event.time_range }}</small></td>
+            <td>{{ r.event.venue }}</td>
+            <td><code class="code-chip">{{ r.registration_id }}</code></td>
+            <td><span class="badge {{ r.status_class() }}">{{ r.status }}</span></td>
+            <td><span class="badge {{ r.attendance_class }}">{{ r.attendance_status }}</span></td>
+            <td class="right nowrap">
+              {% if r.is_confirmed %}
+                <a class="btn btn-sm btn-ghost" href="{{ url_for('student.ticket', registration_id=r.id) }}">
+                  {{ ui.icon('qr', 15) }} Ticket
+                </a>
+                <form method="post" action="{{ url_for('student.cancel_registration', registration_id=r.id) }}"
+                      class="inline-form" data-confirm="Cancel registration {{ r.registration_id }}?">
+                  <button type="submit" class="btn btn-sm btn-danger-ghost">{{ ui.icon('x', 15) }} Cancel</button>
+                </form>
+              {% else %}
+                <span class="muted small">Cancelled {{ r.cancelled_at | datetime_fmt if r.cancelled_at else '' }}</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="card empty">
+    {{ ui.icon('ticket', 40) }}
+    <p><strong>No registrations in this view.</strong></p>
+    <p class="muted">Pick another tab or register for an upcoming AGC event.</p>
+    <a class="btn btn-primary btn-sm" href="{{ url_for('student.events') }}">{{ ui.icon('search', 15) }} Browse events</a>
+  </div>
+{% endif %}
+{% endblock %}

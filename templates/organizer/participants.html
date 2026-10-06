@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% block title %}Participants — {{ APP_NAME }} | {{ APP_TITLE }}{% endblock %}
+{% block body_class %}app-body app-body--organizer{% endblock %}
+
+{% block content %}
+<div class="page-head page-head--organizer">
+  <div>
+    <h1>Participants</h1>
+    <p class="muted">Every confirmed student registration across the events you organise.</p>
+  </div>
+  <div class="page-head__actions">
+    <a class="btn btn-ghost" href="{{ url_for('organizer.participants_csv') }}">{{ ui.icon('download', 17) }} Export CSV</a>
+    <a class="btn btn-organizer" href="{{ url_for('organizer.dashboard') }}">{{ ui.icon('chevron-left', 16) }} Dashboard</a>
+  </div>
+</div>
+
+{% if registrations %}
+  <div class="table-wrap card">
+    <table class="table">
+      <thead>
+        <tr><th>Student</th><th>Roll no</th><th>Department</th><th>Year</th><th>Event</th><th>Event date</th><th>Registration ID</th><th>Attendance</th></tr>
+      </thead>
+      <tbody>
+        {% for r in registrations %}
+          <tr>
+            <td class="link-strong">{{ r.student.name }}<small class="block muted">{{ r.student.email }}</small></td>
+            <td>{{ r.student.roll_number or '-' }}</td>
+            <td>{{ r.student.department or '-' }}</td>
+            <td>{{ r.student.year_of_study or '-' }}</td>
+            <td><a class="link" href="{{ url_for('organizer.event_detail', event_id=r.event_id) }}">{{ r.event.title | shorten(34) }}</a></td>
+            <td class="nowrap">{{ r.event.event_date | date_fmt }}</td>
+            <td><code class="code-chip">{{ r.registration_id }}</code></td>
+            <td><span class="badge {{ r.attendance_class }}">{{ r.attendance_status }}</span></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="card empty">
+    {{ ui.icon('users', 40) }}
+    <p><strong>No participants yet.</strong></p>
+    <p class="muted">Once students register for your events they will be listed here.</p>
+    <a class="btn btn-organizer btn-sm" href="{{ url_for('organizer.create_event') }}">{{ ui.icon('plus', 15) }} Create event</a>
+  </div>
+{% endif %}
+{% endblock %}

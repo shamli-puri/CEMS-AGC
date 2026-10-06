@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% block title %}{{ event.title }} — Statistics | {{ APP_NAME }} | {{ APP_TITLE }}{% endblock %}
+{% block body_class %}app-body app-body--organizer{% endblock %}
+
+{% block content %}
+<div class="page-head page-head--organizer">
+  <div>
+    <p class="breadcrumb"><a href="{{ url_for('organizer.events') }}">My events</a> / <span>{{ event.title }}</span></p>
+    <h1>{{ event.title }}</h1>
+    <p class="muted">{{ event.event_date | date_fmt }} · {{ event.venue }} · <span class="badge {{ event.status_class() }}">{{ event.status }}</span></p>
+  </div>
+  <div class="page-head__actions">
+    <a class="btn btn-ghost" href="{{ url_for('organizer.attendance_report', event_id=event.id) }}">{{ ui.icon('download', 17) }} Attendance PDF</a>
+    <a class="btn btn-organizer" href="{{ url_for('organizer.event_detail', event_id=event.id) }}">{{ ui.icon('chevron-left', 16) }} Event</a>
+  </div>
+</div>
+
+<div class="grid grid--4 stat-grid">
+  <div class="stat-card stat-card--primary"><div class="stat-card__icon">{{ ui.icon('users', 22) }}</div>
+    <div class="stat-card__text"><span class="stat-card__value">{{ stats.confirmed }}</span><span class="stat-card__label">Confirmed</span><span class="stat-card__hint">{{ stats.cancelled }} cancelled</span></div></div>
+  <div class="stat-card stat-card--success"><div class="stat-card__icon">{{ ui.icon('check-circle', 22) }}</div>
+    <div class="stat-card__text"><span class="stat-card__value">{{ stats.present }}</span><span class="stat-card__label">Present</span><span class="stat-card__hint">{{ stats.attendance_rate }}% attendance</span></div></div>
+  <div class="stat-card stat-card--danger"><div class="stat-card__icon">{{ ui.icon('x-circle', 22) }}</div>
+    <div class="stat-card__text"><span class="stat-card__value">{{ stats.absent }}</span><span class="stat-card__label">Absent</span><span class="stat-card__hint">{{ stats.unmarked }} not marked</span></div></div>
+  <div class="stat-card stat-card--info"><div class="stat-card__icon">{{ ui.icon('chart', 22) }}</div>
+    <div class="stat-card__text"><span class="stat-card__value">{{ stats.fill_rate }}%</span><span class="stat-card__label">Fill rate</span><span class="stat-card__hint">Rating {{ stats.average_rating or '-' }} from {{ stats.feedback_count }}</span></div></div>
+</div>
+
+<div class="grid grid--2">
+  <section class="card">
+    <div class="card__head"><h3>{{ ui.icon('users', 19) }} Participants by department</h3></div>
+    {% if by_department %}
+      {% set peak = by_department | map(attribute=1) | max %}
+      <div class="bar-chart">
+        {% for label, value in by_department %}
+          <div class="bar-chart__row">
+            <span class="bar-chart__label">{{ label }}</span>
+            <div class="bar-chart__track"><span style="width: {{ ((value / peak) * 100) | round(0, 'floor') }}%"></span></div>
+            <span class="bar-chart__value">{{ value }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="muted">No confirmed participants yet.</p>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <div class="card__head"><h3>{{ ui.icon('calendar', 19) }} Participants by year</h3></div>
+    {% if by_year %}
+      {% set peak = by_year | map(attribute=1) | max %}
+      <div class="bar-chart">
+        {% for label, value in by_year %}
+          <div class="bar-chart__row">
+            <span class="bar-chart__label">{{ label }}</span>
+            <div class="bar-chart__track"><span style="width: {{ ((value / peak) * 100) | round(0, 'floor') }}%"></span></div>
+            <span class="bar-chart__value">{{ value }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="muted">No confirmed participants yet.</p>
+    {% endif %}
+  </section>
+</div>
+
+<section class="card">
+  <div class="card__head"><h3>{{ ui.icon('list', 19) }} Participant register</h3></div>
+  {% if registrations %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Student</th><th>Roll number</th><th>Department</th><th>Year</th><th>Registration ID</th><th class="right">Attendance</th></tr></thead>
+        <tbody>
+          {% for registration in registrations %}
+            <tr>
+              <td class="link-strong">{{ registration.student.name if registration.student else '-' }}</td>
+              <td>{{ registration.student.roll_number if registration.student and registration.student.roll_number else '-' }}</td>
+              <td>{{ registration.student.department if registration.student and registration.student.department else '-' }}</td>
+              <td>{{ registration.student.year_of_study if registration.student and registration.student.year_of_study else '-' }}</td>
+              <td class="nowrap">{{ registration.registration_id }}</td>
+              <td class="right"><span class="badge {{ registration.attendance_class }}">{{ registration.attendance_status }}</span></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty">
+      {{ ui.icon('users', 34) }}
+      <p><strong>Nobody has registered for this event yet.</strong></p>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% import "_macros.html" as m %}
+{% block title %}{{ event.title }} — {{ APP_NAME }} | {{ APP_TITLE }}{% endblock %}
+
+{% block content %}
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+  <a href="{{ url_for('student.dashboard') }}">Dashboard</a> {{ ui.icon('chevron-right', 13) }}
+  <a href="{{ url_for('student.events') }}">Events</a> {{ ui.icon('chevron-right', 13) }}
+  <span>{{ event.title | shorten(46) }}</span>
+</nav>
+
+<div class="event-hero {% if event.is_cancelled %}event-hero--cancelled{% endif %}">
+  <div class="event-hero__media">
+    {% if event.image_filename %}
+      <img src="{{ url_for('static', filename='uploads/' ~ event.image_filename) }}" alt="{{ event.title }}">
+    {% else %}
+      <span class="event-hero__monogram">{{ event.title[:2] | upper }}</span>
+    {% endif %}
+  </div>
+  <div class="event-hero__body">
+    <div class="chip-row">
+      <span class="badge {{ event.status_class() }}">{{ event.status }}</span>
+      <span class="chip chip--lg">{{ event.category }}</span>
+      <span class="chip chip--lg">{{ ui.icon('building', 14) }} {{ event.organizer.name }}</span>
+    </div>
+    <h1>{{ event.title }}</h1>
+    <div class="event-meta">
+      <span class="chip">{{ ui.icon('calendar', 15) }} {{ event.event_date | date_fmt }}</span>
+      <span class="chip">{{ ui.icon('clock', 15) }} {{ event.time_range }}</span>
+      <span class="chip">{{ ui.icon('pin', 15) }} {{ event.venue }}</span>
+      <span class="chip">{{ ui.icon('ticket', 15) }} Registration closes {{ event.registration_deadline | datetime_fmt }}</span>
+    </div>
+    <div class="event-hero__actions">
+      {% if registration %}
+        <a class="btn btn-primary" href="{{ url_for('student.ticket', registration_id=registration.id) }}">
+          {{ ui.icon('qr', 17) }} View digital ticket
+        </a>
+        <form method="post" action="{{ url_for('student.cancel_registration', registration_id=registration.id) }}"
+              class="inline-form" data-confirm="Cancel your registration {{ registration.registration_id }}?">
+          <button type="submit" class="btn btn-danger-ghost">{{ ui.icon('x', 17) }} Cancel registration</button>
+        </form>
+      {% elif open_now %}
+        <form method="post" action="{{ url_for('student.register', event_id=event.id) }}" class="inline-form">
+          <button type="submit" class="btn btn-accent btn-lg">{{ ui.icon('plus', 18) }} Register for this event</button>
+        </form>
+        <span class="muted">{{ event.seats_left }} seat(s) still available</span>
+      {% else %}
+        <span class="alert alert--warning">{{ reason }}</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="grid grid--2 grid--main">
+  <div class="stack">
+    <section class="card">
+      <div class="card__head"><h3>{{ ui.icon('notice', 19) }} About this event</h3></div>
+      <p class="prose">{{ event.description }}</p>
+    </section>
+
+    {% if registration %}
+      <section class="card card--accent">
+        <div class="card__head"><h3>{{ ui.icon('check-circle', 19) }} Your registration</h3></div>
+        <div class="detail-grid">
+          <div><span class="detail-grid__label">Registration ID</span><code class="code-chip">{{ registration.registration_id }}</code></div>
+          <div><span class="detail-grid__label">Status</span><span class="badge {{ registration.status_class() }}">{{ registration.status }}</span></div>
+          <div><span class="detail-grid__label">Registered on</span><span>{{ registration.registered_at | datetime_fmt }}</span></div>
+          <div><span class="detail-grid__label">Attendance</span><span class="badge {{ registration.attendance_class }}">{{ registration.attendance_status }}</span></div>
+        </div>
+        <div class="stack-sm">
+          <a class="btn btn-sm btn-ghost" href="{{ url_for('student.participants', event_id=event.id) }}">
+            {{ ui.icon('users', 15) }} View participants ({{ stats.confirmed }})
+          </a>
+        </div>
+      </section>
+    {% endif %}
+
+    {% if attendance and attendance.status == 'PRESENT' %}
+      <section class="card">
+        <div class="card__head"><h3>{{ ui.icon('feedback', 19) }} Share your feedback</h3></div>
+        {% if feedback %}
+          <div class="feedback-box">
+            {{ m.star_row(feedback.rating) }}
+            <p>{{ feedback.comments }}</p>
+            <small class="muted">Submitted {{ feedback.created_at | datetime_fmt }}</small>
+          </div>
+        {% else %}
+          <form method="post" action="{{ url_for('student.submit_feedback', event_id=event.id) }}" class="form" data-star-form>
+            <fieldset class="form__row">
+              <legend>Rate this event <span class="req">*</span></legend>
+              <div class="star-input">
+                {% for i in range(5, 0, -1) %}
+                  <input type="radio" id="star{{ i }}" name="rating" value="{{ i }}" required
+                         {% if loop.first %}checked{% endif %}>
+                  <label for="star{{ i }}" title="{{ i }} star{{ 's' if i > 1 }}">{{ ui.icon('star', 22) }}</label>
+                {% endfor %}
+              </div>
+            </fieldset>
+            <div class="form__row">
+              <label for="comments">Your comments <span class="req">*</span></label>
+              <textarea id="comments" name="comments" rows="4" required minlength="5"
+                        placeholder="How was the event? Share suggestions for the organizers."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">{{ ui.icon('send', 17) }} Submit feedback</button>
+          </form>
+        {% endif %}
+      </section>
+    {% endif %}
+
+    {% if certificate %}
+      <section class="card">
+        <div class="card__head"><h3>{{ ui.icon('certificate', 19) }} Certificate</h3></div>
+        <p class="muted">Your certificate for this event is ready.</p>
+        <div class="stack-sm">
+          <a class="btn btn-accent" href="{{ url_for('student.certificate_pdf', certificate_id=certificate.id) }}">
+            {{ ui.icon('download', 17) }} Download PDF
+          </a>
+          <a class="btn btn-ghost" href="{{ url_for('student.certificate_email', certificate_id=certificate.id) }}">
+            {{ ui.icon('mail', 17) }} Email the certificate
+          </a>
+        </div>
+      </section>
+    {% endif %}
+  </div>
+
+  <div class="stack">
+    <section class="card">
+      <div class="card__head"><h3>{{ ui.icon('chart', 19) }} Event statistics</h3></div>
+      <div class="mini-stat-grid">
+        <div><strong>{{ stats.confirmed }}</strong><span>Registered</span></div>
+        <div><strong>{{ stats.capacity }}</strong><span>Capacity</span></div>
+        <div><strong>{{ event.seats_left }}</strong><span>Seats left</span></div>
+        <div><strong>{{ stats.fill_rate }}%</strong><span>Fill rate</span></div>
+        <div><strong>{{ stats.present }}</strong><span>Present</span></div>
+        <div><strong>{{ stats.average_rating or '-' }}</strong><span>Avg rating</span></div>
+      </div>
+      <div class="seat-meter seat-meter--lg">
+        <div class="seat-meter__bar">
+          <span style="width: {{ stats.fill_rate }}%"></span>
+        </div>
+      </div>
+      <p class="muted small">{{ stats.fill_rate }}% of seats filled &middot; {{ stats.attendance_rate }}% of registered participants attended</p>
+    </section>
+
+    <section class="card">
+      <div class="card__head"><h3>{{ ui.icon('info', 19) }} Registration rules</h3></div>
+      <ul class="tick-list">
+        <li>One registration per student per event</li>
+        <li>Registration closes at {{ event.registration_deadline | datetime_fmt }}</li>
+        <li>Maximum {{ event.max_capacity }} participants</li>
+        <li>Carry the QR ticket for venue entry</li>
+        <li>Certificates issued after verified attendance</li>
+      </ul>
+      {% if event.certificate_eligible %}
+        <span class="badge badge-success">{{ ui.icon('award', 14) }} Certificates available</span>
+      {% endif %}
+    </section>
+
+    <section class="card">
+      <div class="card__head"><h3>{{ ui.icon('user', 19) }} Organizer</h3></div>
+      <div class="person">
+        <span class="avatar">{{ event.organizer.initials }}</span>
+        <div>
+          <strong>{{ event.organizer.name }}</strong>
+          <small class="muted">{{ event.organizer.display_meta }}</small>
+        </div>
+      </div>
+      <a class="btn btn-sm btn-ghost btn-block" href="{{ url_for('student.notices') }}">
+        {{ ui.icon('bell', 15) }} Event notices
+      </a>
+    </section>
+  </div>
+</div>
+{% endblock %}

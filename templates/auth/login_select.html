@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% block title %}Choose Your Role — {{ APP_NAME }} | {{ APP_TITLE }}{% endblock %}
+{% block body_class %}app-body app-body--auth{% endblock %}
+{% block content_class %}content--auth{% endblock %}
+
+{% block content %}
+<div class="role-select">
+  <div class="role-select__head">
+    <span class="role-pill role-pill--student">Student</span>
+    <span class="role-pill role-pill--faculty">Faculty</span>
+    <span class="role-pill role-pill--organizer">Organizer</span>
+    <h1>Choose your portal</h1>
+    <p>Select the role that matches you to open the correct login page.</p>
+  </div>
+
+  <div class="role-grid">
+    <a class="role-card role-card--student" href="{{ url_for('auth.login_student') }}">
+      <span class="role-card__icon">{{ ui.icon('user', 30) }}</span>
+      <h2 class="role-card__label">Student</h2>
+      <p class="role-card__tagline">Register for AGC campus events and manage your participation.</p>
+      <ul class="role-card__list">
+        <li>{{ ui.icon('search', 16) }} Browse the event catalogue</li>
+        <li>{{ ui.icon('qr', 16) }} Get instant QR digital tickets</li>
+        <li>{{ ui.icon('certificate', 16) }} Download certificates</li>
+      </ul>
+      <span class="role-card__cta">Continue as student {{ ui.icon('arrow-right', 17) }}</span>
+    </a>
+
+    <a class="role-card role-card--faculty" href="{{ url_for('auth.login_faculty') }}">
+      <span class="role-card__icon">{{ ui.icon('book', 30) }}</span>
+      <h2 class="role-card__label">Faculty</h2>
+      <p class="role-card__tagline">Supervise events, verify attendance and review feedback.</p>
+      <ul class="role-card__list">
+        <li>{{ ui.icon('calendar', 16) }} Monitor all campus events</li>
+        <li>{{ ui.icon('clipboard', 16) }} Verify student attendance</li>
+        <li>{{ ui.icon('feedback', 16) }} Review participant feedback</li>
+      </ul>
+      <span class="role-card__cta">Continue as faculty {{ ui.icon('arrow-right', 17) }}</span>
+    </a>
+
+    <a class="role-card role-card--organizer" href="{{ url_for('auth.login_organizer') }}">
+      <span class="role-card__icon">{{ ui.icon('megaphone', 30) }}</span>
+      <h2 class="role-card__label">Organizer</h2>
+      <p class="role-card__tagline">Create and manage events, registrations and certificates.</p>
+      <ul class="role-card__list">
+        <li>{{ ui.icon('plus', 16) }} Create and manage events</li>
+        <li>{{ ui.icon('users', 16) }} Handle registrations</li>
+        <li>{{ ui.icon('chart', 16) }} View statistics and reports</li>
+      </ul>
+      <span class="role-card__cta">Continue as organizer {{ ui.icon('arrow-right', 17) }}</span>
+    </a>
+  </div>
+
+  <div class="role-select__register">
+    <div class="auth-divider"><span>New to CEMS? Create an account</span></div>
+    <a class="btn btn-ghost" href="{{ url_for('auth.register_student') }}">
+      {{ ui.icon('user', 16) }} Student registration
+    </a>
+    <a class="btn btn-ghost" href="{{ url_for('auth.register_faculty') }}">
+      {{ ui.icon('book', 16) }} Faculty registration
+    </a>
+    <a class="btn btn-ghost" href="{{ url_for('auth.register_organizer') }}">
+      {{ ui.icon('megaphone', 16) }} Organizer registration
+    </a>
+  </div>
+
+  <p class="center">
+    <a class="role-select__back" href="{{ url_for('main.home') }}">
+      {{ ui.icon('chevron-left', 16) }} Back to welcome
+    </a>
+  </p>
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% block title %}Notice Board — {{ APP_NAME }} | {{ APP_TITLE }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Notice Board</h1>
+    <p class="muted">Announcements published for {{ ORG_NAME }} campus events.</p>
+  </div>
+  <a class="btn btn-ghost" href="{{ url_for('main.role_home') }}">{{ ui.icon('chevron-left', 16) }} Dashboard</a>
+</div>
+
+{% if important %}
+  <div class="alert alert--warning">
+    {{ ui.icon('alert', 18) }}
+    <span><strong>{{ important | length }} important notice(s)</strong> need your attention.</span>
+  </div>
+{% endif %}
+
+{% if notices %}
+  <div class="notice-board">
+    {% for n in notices %}
+      <article class="notice-card {% if n.is_important %}notice-card--important{% endif %}">
+        <div class="notice-card__side">
+          <span class="notice-card__day">{{ n.published_at.day }}</span>
+          <span class="notice-card__month">{{ n.published_at.strftime('%b') | upper }}</span>
+        </div>
+        <div class="notice-card__body">
+          <div class="chip-row">
+            {% if n.is_important %}<span class="badge badge-important">{{ ui.icon('alert', 13) }} Important</span>{% endif %}
+            <span class="chip">{{ n.audience }}</span>
+            <span class="chip">{{ n.published_at | datetime_fmt }}</span>
+          </div>
+          <h3><a href="{{ url_for('notices.detail', notice_id=n.id) }}">{{ n.title }}</a></h3>
+          <p>{{ n.description | shorten(240) }}</p>
+          <small class="muted">Posted by {{ n.author_name }}</small>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="card empty">
+    {{ ui.icon('bell', 40) }}
+    <p><strong>No notices are published.</strong></p>
+  </div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% block title %}Verify Ticket — {{ APP_NAME }} | {{ APP_TITLE }}{% endblock %}
+{% block body_class %}app-body app-body--auth{% endblock %}
+{% block content_class %}content--auth{% endblock %}
+
+{% block content %}
+<div class="auth-shell auth-shell--single">
+  <section class="auth-form-panel auth-form-panel--full">
+    <div class="auth-card auth-card--wide">
+      {% if registration %}
+        <div class="verify-status {% if registration.is_cancelled %}verify-status--bad{% elif attended %}verify-status--good{% else %}verify-status--warn{% endif %}">
+          {{ ui.icon('shield', 26) }}
+          <div>
+            <strong>
+              {% if registration.is_cancelled %}Ticket cancelled
+              {% elif attended %}Valid ticket &middot; attendance verified
+              {% else %}Valid ticket &middot; attendance not marked yet{% endif %}
+            </strong>
+            <small>Checked live against the {{ APP_NAME }} database</small>
+          </div>
+        </div>
+
+        <h2 class="mt">{{ event.title }}</h2>
+        <div class="detail-grid">
+          <div><span class="detail-grid__label">Registration ID</span><code class="code-chip">{{ registration.registration_id }}</code></div>
+          <div><span class="detail-grid__label">Student</span>{{ registration.student.name }}</div>
+          <div><span class="detail-grid__label">Roll number</span>{{ registration.student.roll_number or '-' }}</div>
+          <div><span class="detail-grid__label">Department</span>{{ registration.student.department or '-' }}</div>
+          <div><span class="detail-grid__label">Event date</span>{{ event.event_date | date_fmt }}</div>
+          <div><span class="detail-grid__label">Time</span>{{ event.time_range }}</div>
+          <div><span class="detail-grid__label">Venue</span>{{ event.venue }}</div>
+          <div><span class="detail-grid__label">Event status</span><span class="badge {{ event.status_class() }}">{{ event.status }}</span></div>
+          <div><span class="detail-grid__label">Attendance</span><span class="badge {{ registration.attendance_class }}">{{ registration.attendance_status }}</span></div>
+          <div><span class="detail-grid__label">Registered on</span>{{ registration.registered_at | datetime_fmt }}</div>
+        </div>
+
+        <p class="muted small">
+          Verified at {{ now | datetime_fmt }} &middot; {{ APP_NAME }} &mdash; {{ APP_TITLE }} &middot; {{ ORG_NAME }}
+        </p>
+
+        <div class="stack-sm">
+          <a class="btn btn-primary" href="{{ url_for('events.catalogue') }}">{{ ui.icon('grid', 16) }} Browse other events</a>
+          {% if current_user.is_authenticated %}
+            <a class="btn btn-ghost" href="{{ url_for('main.role_home') }}">{{ ui.icon('dashboard', 16) }} Go to my dashboard</a>
+          {% else %}
+            <a class="btn btn-ghost" href="{{ url_for('auth.login') }}">{{ ui.icon('login', 16) }} Login to CEMS</a>
+          {% endif %}
+        </div>
+      {% else %}
+        <div class="verify-status verify-status--bad">
+          {{ ui.icon('x-circle', 26) }}
+          <div>
+            <strong>Ticket not found</strong>
+            <small>No registration matches &ldquo;{{ token }}&rdquo;</small>
+          </div>
+        </div>
+        <p class="muted">
+          Check that the QR code was scanned correctly. Registration IDs look like <code class="code-chip">AGC-REG-XXXXXX</code>.
+        </p>
+        <a class="btn btn-primary" href="{{ url_for('events.catalogue') }}">{{ ui.icon('grid', 16) }} Browse events</a>
+      {% endif %}
+    </div>
+  </section>
+</div>
+{% endblock %}

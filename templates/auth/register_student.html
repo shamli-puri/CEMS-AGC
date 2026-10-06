@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% block title %}Student Registration — {{ APP_NAME }} | {{ APP_TITLE }}{% endblock %}
+{% block body_class %}app-body app-body--auth{% endblock %}
+{% block content_class %}content--auth{% endblock %}
+
+{% block content %}
+<div class="auth-shell auth-shell--single">
+  <section class="auth-form-panel auth-form-panel--full">
+    <div class="auth-card auth-card--wide">
+      <div class="auth-brand">
+        {{ ui.brand_mark(48) }}
+        <div>
+          <h2>Student Registration</h2>
+          <p>{{ APP_NAME }} — {{ APP_TITLE }}</p>
+          <p class="muted">{{ ORG_NAME }}, {{ ORG_PLACE }}</p>
+        </div>
+      </div>
+
+      <p class="muted">
+        Self register your student account to browse events, register for them, get QR tickets, track attendance, and download certificates.
+      </p>
+
+      <form method="post" action="{{ url_for('auth.register_student') }}" class="form" novalidate>
+        <div class="form__grid">
+          <div class="form__row">
+            <label for="name">Full name <span class="req">*</span></label>
+            <input type="text" id="name" name="name" required placeholder="e.g. Aarav Sharma"
+                   value="{{ form.name or '' }}">
+          </div>
+          <div class="form__row">
+            <label for="email">College email <span class="req">*</span></label>
+            <input type="email" id="email" name="email" required placeholder="name@agc.edu.in"
+                   value="{{ form.email or '' }}">
+          </div>
+          <div class="form__row">
+            <label for="roll_number">Roll / Enrollment number <span class="req">*</span></label>
+            <input type="text" id="roll_number" name="roll_number" required placeholder="e.g. CSE-2023-0142"
+                   value="{{ form.roll_number or '' }}">
+          </div>
+          <div class="form__row">
+            <label for="department">Department <span class="req">*</span></label>
+            <select id="department" name="department" required>
+              <option value="">Select department</option>
+              {% for dept in departments %}
+                <option value="{{ dept }}" {% if form.department == dept %}selected{% endif %}>{{ dept }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form__row">
+            <label for="year_of_study">Year of study <span class="req">*</span></label>
+            <select id="year_of_study" name="year_of_study" required>
+              <option value="">Select year</option>
+              {% for year in years %}
+                <option value="{{ year }}" {% if form.year_of_study == year %}selected{% endif %}>{{ year }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form__row">
+            <label for="phone">Mobile number</label>
+            <input type="tel" id="phone" name="phone" placeholder="10 digit mobile number"
+                   value="{{ form.phone or '' }}">
+          </div>
+          <div class="form__row">
+            <label for="password">Password <span class="req">*</span></label>
+            <input type="password" id="password" name="password" required minlength="6"
+                   placeholder="Minimum 6 characters" autocomplete="new-password">
+          </div>
+          <div class="form__row">
+            <label for="confirm_password">Confirm password <span class="req">*</span></label>
+            <input type="password" id="confirm_password" name="confirm_password" required minlength="6"
+                   placeholder="Repeat the password" autocomplete="new-password">
+          </div>
+        </div>
+
+        <div class="form__row">
+          <label for="bio">Short introduction</label>
+          <textarea id="bio" name="bio" rows="3" maxlength="400"
+                    placeholder="Optional: interests, clubs, achievements">{{ form.bio or '' }}</textarea>
+        </div>
+
+        <label class="checkbox">
+          <input type="checkbox" name="agree" value="1" required>
+          <span>I agree to the AGC campus event participation guidelines and the CEMS privacy policy.</span>
+        </label>
+
+        <div class="form__actions">
+          <button type="submit" class="btn btn-primary btn-lg">{{ ui.icon('check', 18) }} Create student account</button>
+          <a class="btn btn-ghost" href="{{ url_for('auth.login_student') }}">Back to student login</a>
+        </div>
+      </form>
+    </div>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% block title %}{{ 'Edit' if event else 'Create' }} Event — {{ APP_NAME }} | {{ APP_TITLE }}{% endblock %}
+{% block body_class %}app-body app-body--organizer{% endblock %}
+
+{% block content %}
+<div class="page-head page-head--organizer">
+  <div>
+    <h1>{{ 'Edit event' if event else 'Create a new event' }}</h1>
+    <p class="muted">
+      {% if event %}Update "{{ event.title }}" &middot; current status {{ event.status }}
+      {% else %}Publish an AGC campus event and open student registrations on {{ ORG_NAME }}.{% endif %}
+    </p>
+  </div>
+  <div class="page-head__actions">
+    <a class="btn btn-ghost" href="{{ url_for('organizer.event_detail', event_id=event.id) if event else url_for('organizer.events') }}">
+      {{ ui.icon('chevron-left', 16) }} Back
+    </a>
+  </div>
+</div>
+
+<form method="post" enctype="multipart/form-data" class="card form" novalidate
+      action="{{ url_for('organizer.edit_event', event_id=event.id) if event else url_for('organizer.create_event') }}">
+  <div class="form__grid">
+    <div class="form__row form__row--full">
+      <label for="title">Event title <span class="req">*</span></label>
+      <input type="text" id="title" name="title" required maxlength="160"
+             placeholder="e.g. AGC Annual Technical Symposium 2026" value="{{ form.title or '' }}">
+    </div>
+
+    <div class="form__row form__row--full">
+      <label for="description">Description <span class="req">*</span></label>
+      <textarea id="description" name="description" rows="5" required minlength="20"
+                placeholder="Describe the event, its agenda and what participants should expect.">{{ form.description or '' }}</textarea>
+    </div>
+
+    <div class="form__row">
+      <label for="category">Category <span class="req">*</span></label>
+      <select id="category" name="category" required>
+        <option value="">Select category</option>
+        {% for cat in categories %}
+          <option value="{{ cat }}" {% if form.category == cat %}selected{% endif %}>{{ cat }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form__row">
+      <label for="venue">Venue <span class="req">*</span></label>
+      <input type="text" id="venue" name="venue" required placeholder="e.g. Main Auditorium, AGC Campus"
+             value="{{ form.venue or '' }}">
+    </div>
+
+    <div class="form__row">
+      <label for="event_date">Event date <span class="req">*</span></label>
+      <input type="date" id="event_date" name="event_date" required
+             {% if min_date %}min="{{ min_date }}"{% endif %} value="{{ form.event_date or '' }}">
+    </div>
+
+    <div class="form__row form__row--split">
+      <div>
+        <label for="start_time">Start time <span class="req">*</span></label>
+        <input type="time" id="start_time" name="start_time" required value="{{ form.start_time or '' }}">
+      </div>
+      <div>
+        <label for="end_time">End time <span class="req">*</span></label>
+        <input type="time" id="end_time" name="end_time" required value="{{ form.end_time or '' }}">
+      </div>
+    </div>
+
+    <div class="form__row">
+      <label for="max_capacity">Maximum capacity <span class="req">*</span></label>
+      <input type="number" id="max_capacity" name="max_capacity" required min="1" max="10000"
+             value="{{ form.max_capacity or '100' }}">
+      {% if event %}<small class="muted">{{ event.seats_taken }} participant(s) already registered.</small>{% endif %}
+    </div>
+
+    <div class="form__row">
+      <label for="registration_deadline">Registration deadline <span class="req">*</span></label>
+      <input type="datetime-local" id="registration_deadline" name="registration_deadline" required
+             value="{{ form.registration_deadline or '' }}">
+      <small class="muted">Students cannot register after this date and time.</small>
+    </div>
+
+    <div class="form__row form__row--full">
+      <label for="event_image">Event image / poster</label>
+      <input type="file" id="event_image" name="event_image" accept="image/*" data-preview-input>
+      <small class="muted">PNG, JPG, GIF or WEBP up to 4 MB. Optional.</small>
+      <div class="upload-preview" data-preview-target hidden></div>
+      {% if event and event.image_filename %}
+        <div class="upload-current">
+          <img src="{{ url_for('static', filename='uploads/' ~ event.image_filename) }}" alt="Current event image" width="120">
+          <label class="checkbox">
+            <input type="checkbox" name="remove_image" value="1">
+            <span>Remove the current image</span>
+          </label>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="form__row form__row--full">
+      <label class="checkbox">
+        <input type="checkbox" name="certificate_eligible" value="1" {% if form.certificate_eligible %}checked{% endif %}>
+        <span>Issue digital certificates for verified attendance of this event</span>
+      </label>
+    </div>
+  </div>
+
+  <div class="form__actions">
+    <button type="submit" class="btn btn-organizer btn-lg">
+      {{ ui.icon('check', 18) }} {{ 'Save changes' if event else 'Create event' }}
+    </button>
+    <a class="btn btn-ghost" href="{{ url_for('organizer.event_detail', event_id=event.id) if event else url_for('organizer.events') }}">
+      Cancel
+    </a>
+  </div>
+</form>
+
+<section class="card">
+  <div class="card__head"><h3>{{ ui.icon('info', 19) }} How {{ APP_NAME }} handles this event</h3></div>
+  <ul class="tick-list">
+    <li>Students can register until the registration deadline or until capacity is reached.</li>
+    <li>Each confirmed registration gets a unique registration ID and a QR digital ticket.</li>
+    <li>Status moves automatically to Ongoing during the event and Completed after it ends.</li>
+    <li>Certificates are issued for participants marked Present after completion.</li>
+    <li>Cancelling an event releases all confirmed registrations and notifies participants.</li>
+  </ul>
+</section>
+{% endblock %}

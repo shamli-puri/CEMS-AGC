@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% import "_macros.html" as m %}
+{% block title %}Feedback #{{ entry.id }} — {{ APP_NAME }}{% endblock %}
+{% block body_class %}app-body app-body--faculty{% endblock %}
+
+{% block content %}
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+  <a href="{{ url_for('faculty.dashboard') }}">Dashboard</a> {{ ui.icon('chevron-right', 13) }}
+  <a href="{{ url_for('faculty.feedback') }}">Feedback</a> {{ ui.icon('chevron-right', 13) }}
+  <span>#{{ entry.id }}</span>
+</nav>
+
+<article class="card">
+  <div class="card__head">
+    <h3>{{ ui.icon('feedback', 19) }} Feedback detail</h3>
+    {{ m.star_row(entry.rating) }}
+  </div>
+  <div class="detail-grid">
+    <div><span class="detail-grid__label">Student</span>{{ entry.student.name }}</div>
+    <div><span class="detail-grid__label">Department</span>{{ entry.student.department or '-' }}</div>
+    <div><span class="detail-grid__label">Roll number</span>{{ entry.student.roll_number or '-' }}</div>
+    <div><span class="detail-grid__label">Submitted</span>{{ entry.created_at | datetime_fmt }}</div>
+  </div>
+  <div class="prose mt">{{ entry.comments }}</div>
+</article>
+
+<div class="page-head__actions">
+  <a class="btn btn-ghost" href="{{ url_for('faculty.event_detail', event_id=entry.event_id) }}">
+    {{ ui.icon('calendar', 16) }} {{ entry.event.title }}
+  </a>
+  <a class="btn btn-faculty" href="{{ url_for('faculty.feedback') }}">{{ ui.icon('chevron-left', 16) }} All feedback</a>
+</div>
+{% endblock %}

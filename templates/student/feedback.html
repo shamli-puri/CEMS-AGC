@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% import "_macros.html" as m %}
+{% block title %}Feedback — {{ APP_NAME }} | {{ APP_TITLE }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Event Feedback</h1>
+    <p class="muted">Rate the AGC events you attended and help organizers improve.</p>
+  </div>
+  <a class="btn btn-ghost" href="{{ url_for('student.dashboard') }}">{{ ui.icon('chevron-left', 16) }} Dashboard</a>
+</div>
+
+<div class="grid grid--3 stat-grid">
+  <div class="stat-card stat-card--accent">
+    <div class="stat-card__icon">{{ ui.icon('star', 22) }}</div>
+    <div class="stat-card__text"><span class="stat-card__value">{{ average or '-' }}</span><span class="stat-card__label">Average rating</span></div>
+  </div>
+  <div class="stat-card stat-card--primary">
+    <div class="stat-card__icon">{{ ui.icon('feedback', 22) }}</div>
+    <div class="stat-card__text"><span class="stat-card__value">{{ total }}</span><span class="stat-card__label">Submitted</span></div>
+  </div>
+  <div class="stat-card stat-card--info">
+    <div class="stat-card__icon">{{ ui.icon('file', 22) }}</div>
+    <div class="stat-card__text"><span class="stat-card__value">{{ pending | length }}</span><span class="stat-card__label">Awaiting feedback</span></div>
+  </div>
+</div>
+
+{% if pending %}
+  <section class="card">
+    <div class="card__head"><h3>{{ ui.icon('feedback', 19) }} Pending feedback</h3></div>
+    <div class="feedback-list">
+      {% for r in pending %}
+        <details class="feedback-item" open>
+          <summary>
+            <span class="feedback-item__title">{{ r.event.title }}</span>
+            <span class="muted">{{ r.event.event_date | date_fmt }}</span>
+          </summary>
+          <form method="post" action="{{ url_for('student.submit_feedback', event_id=r.event.id) }}" class="form" data-star-form>
+            <fieldset class="form__row">
+              <legend>Your rating <span class="req">*</span></legend>
+              <div class="star-input">
+                {% for i in range(5, 0, -1) %}
+                  <input type="radio" id="p{{ r.id }}-star{{ i }}" name="rating" value="{{ i }}" required
+                         {% if loop.first %}checked{% endif %}>
+                  <label for="p{{ r.id }}-star{{ i }}" title="{{ i }} star{{ 's' if i > 1 }}">{{ ui.icon('star', 22) }}</label>
+                {% endfor %}
+              </div>
+            </fieldset>
+            <div class="form__row">
+              <label for="c{{ r.id }}">Comments <span class="req">*</span></label>
+              <textarea id="c{{ r.id }}" name="comments" rows="3" required minlength="5"
+                        placeholder="Share your experience of {{ r.event.title }}."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">{{ ui.icon('send', 15) }} Submit feedback</button>
+          </form>
+        </details>
+      {% endfor %}
+    </div>
+  </section>
+{% endif %}
+
+<section class="card">
+  <div class="card__head"><h3>{{ ui.icon('list', 19) }} My submitted feedback</h3></div>
+  {% if entries %}
+    <div class="feedback-list">
+      {% for entry in entries %}
+        <article class="feedback-entry">
+          <div class="feedback-entry__head">
+            <div>
+              <strong>{{ entry.event.title }}</strong>
+              <small class="muted">{{ entry.event.event_date | date_fmt }} &middot; {{ entry.event.category }}</small>
+            </div>
+            {{ m.star_row(entry.rating) }}
+          </div>
+          <p>{{ entry.comments }}</p>
+          <small class="muted">Submitted {{ entry.created_at | datetime_fmt }} &middot; Rating {{ entry.rating }}/5</small>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty">
+      {{ ui.icon('feedback', 34) }}
+      <p><strong>You have not submitted any feedback yet.</strong></p>
+      <p class="muted">Feedback opens after attendance is verified as Present.</p>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

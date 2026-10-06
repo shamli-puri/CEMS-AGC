@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% block title %}Ticket {{ registration.registration_id }} — {{ APP_NAME }} | {{ APP_TITLE }}{% endblock %}
+{% block body_class %}app-body app-body--print{% endblock %}
+
+{% block content %}
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+  <a href="{{ url_for('student.dashboard') }}">Dashboard</a> {{ ui.icon('chevron-right', 13) }}
+  <a href="{{ url_for('student.registrations') }}">My Registrations</a> {{ ui.icon('chevron-right', 13) }}
+  <span>Ticket {{ registration.registration_id }}</span>
+</nav>
+
+<div class="page-head">
+  <div>
+    <h1>Digital Event Ticket</h1>
+    <p class="muted">Present this ticket (with QR code) at the AGC venue registration desk.</p>
+  </div>
+  <div class="page-head__actions">
+    <button type="button" class="btn btn-primary" onclick="window.print()">{{ ui.icon('print', 17) }} Print ticket</button>
+    <a class="btn btn-ghost" href="{{ url_for('student.ticket_qr', registration_id=registration.id) }}">
+      {{ ui.icon('download', 17) }} Download QR
+    </a>
+    <a class="btn btn-ghost" href="{{ url_for('student.registrations') }}">{{ ui.icon('chevron-left', 16) }} My registrations</a>
+  </div>
+</div>
+
+<article class="ticket" id="cems-ticket">
+  <header class="ticket__head">
+    <div class="ticket__brand">
+      {{ ui.brand_mark(46) }}
+      <div>
+        <strong>{{ APP_NAME }}</strong>
+        <span>{{ APP_TITLE }}</span>
+        <small>{{ ORG_NAME }}, {{ ORG_PLACE }}</small>
+      </div>
+    </div>
+    <div class="ticket__stamp">
+      <span class="badge {{ event.status_class() }}">{{ event.status }}</span>
+      <strong>ADMIT ONE</strong>
+    </div>
+  </header>
+
+  <div class="ticket__body">
+    <div class="ticket__event">
+      <p class="ticket__label">Event</p>
+      <h2>{{ event.title }}</h2>
+      <div class="ticket__meta">
+        <span>{{ ui.icon('calendar', 16) }} {{ event.event_date | date_fmt }}</span>
+        <span>{{ ui.icon('clock', 16) }} {{ event.time_range }}</span>
+        <span>{{ ui.icon('pin', 16) }} {{ event.venue }}</span>
+        <span>{{ ui.icon('building', 16) }} {{ event.category }} event</span>
+      </div>
+    </div>
+
+    <div class="ticket__holder">
+      <p class="ticket__label">Participant</p>
+      <h3>{{ registration.student.name }}</h3>
+      <dl class="ticket__dl">
+        <div><dt>Registration ID</dt><dd><code class="code-chip">{{ registration.registration_id }}</code></dd></div>
+        <div><dt>Roll / ID number</dt><dd>{{ registration.student.roll_number or registration.student.employee_id or '-' }}</dd></div>
+        <div><dt>Department</dt><dd>{{ registration.student.department or '-' }}</dd></div>
+        <div><dt>Registered on</dt><dd>{{ registration.registered_at | datetime_fmt }}</dd></div>
+      </dl>
+    </div>
+
+    <div class="ticket__qr">
+      <img src="{{ qr_png_url }}" alt="QR code for registration {{ registration.registration_id }}" width="190" height="190">
+      <p class="ticket__qr-caption">Scan at entry</p>
+      <code class="code-chip code-chip--sm">{{ registration.registration_id }}</code>
+    </div>
+  </div>
+
+  <footer class="ticket__foot">
+    <div>
+      <p class="ticket__label">Issued by</p>
+      <p>{{ event.organizer.name }} &middot; {{ event.organizer.display_meta }}</p>
+    </div>
+    <div>
+      <p class="ticket__label">Attendance</p>
+      <p><span class="badge {{ registration.attendance_class }}">{{ registration.attendance_status }}</span></p>
+    </div>
+    <div>
+      <p class="ticket__label">Verify this ticket</p>
+      <p><a href="{{ verify_url }}" class="link-strong">{{ verify_url }}</a></p>
+    </div>
+  </footer>
+
+  <p class="ticket__terms">
+    {{ APP_NAME }} &middot; {{ APP_TITLE }} &middot; {{ ORG_NAME }}. This ticket is non-transferable and valid only for the
+    event and date printed above. Verify at {{ url_for('events.verify_ticket', token=registration.registration_id) }}.
+  </p>
+</article>
+
+<section class="card">
+  <div class="card__head"><h3>{{ ui.icon('info', 19) }} What happens next?</h3></div>
+  <ol class="steps">
+    <li><strong>Entry:</strong> Show the QR code at the registration desk for scanning.</li>
+    <li><strong>Attendance:</strong> Faculty or the organizer marks your attendance as Present.</li>
+    <li><strong>Feedback:</strong> Submit a 1&ndash;5 star rating after the event ends.</li>
+    <li><strong>Certificate:</strong> Download your PDF certificate from the Certificates page.</li>
+  </ol>
+  <div class="stack-sm">
+    <a class="btn btn-ghost" href="{{ url_for('events.verify_ticket', token=registration.registration_id) }}">
+      {{ ui.icon('shield', 16) }} Open public verification page
+    </a>
+  </div>
+</section>
+{% endblock %}

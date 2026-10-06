@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% block title %}Mark Attendance — {{ event.title }} | {{ APP_NAME }}{% endblock %}
+{% block body_class %}app-body app-body--faculty{% endblock %}
+
+{% block content %}
+<div class="page-head page-head--faculty">
+  <div>
+    <span class="badge {{ event.status_class() }}">{{ event.status }}</span>
+    <h1>Mark Attendance</h1>
+    <p class="muted">{{ event.title }} &middot; {{ event.event_date | date_fmt }} &middot; {{ event.time_range }} &middot; {{ event.venue }}</p>
+  </div>
+  <div class="page-head__actions">
+    <a class="btn btn-ghost" href="{{ url_for('faculty.attendance_report', event_id=event.id) }}">{{ ui.icon('download', 17) }} PDF register</a>
+    <a class="btn btn-ghost" href="{{ url_for('faculty.attendees', event_id=event.id) }}">{{ ui.icon('users', 17) }} Attendees</a>
+    <a class="btn btn-ghost" href="{{ url_for('faculty.event_detail', event_id=event.id) }}">{{ ui.icon('chevron-left', 16) }} Event</a>
+  </div>
+</div>
+
+{% if registrations %}
+  <div class="mini-stat-grid card">
+    <div><strong>{{ registrations | length }}</strong><span>Participants</span></div>
+    <div><strong>{{ marked | length }}</strong><span>Marked</span></div>
+    <div><strong>{{ unmarked | length }}</strong><span>Pending</span></div>
+    <div><strong>{{ stats.attendance_rate }}%</strong><span>Attendance rate</span></div>
+  </div>
+
+  <form method="post" action="{{ url_for('faculty.attendance', event_id=event.id) }}" class="card" id="attendance-form">
+    <div class="card__head">
+      <h3>{{ ui.icon('check', 19) }} Attendance sheet</h3>
+      <span class="muted small">Tick a participant to mark Present. Unticked selected participants become Absent.</span>
+    </div>
+
+    <div class="toolbar">
+      <button type="submit" class="btn btn-faculty" name="scope" value="marked" formnovalidate>
+        {{ ui.icon('check', 16) }} Save selected
+      </button>
+      <button type="submit" class="btn btn-ghost" name="scope" value="unmarked" data-confirm="Mark every unmarked participant as Absent?">
+        {{ ui.icon('x', 16) }} Mark unmarked as absent
+      </button>
+      <button type="submit" class="btn btn-accent" name="scope" value="all" data-confirm="Mark ALL participants as Present?">
+        {{ ui.icon('check-circle', 16) }} Mark all present
+      </button>
+      <button type="button" class="btn btn-ghost" data-select-all="present">{{ ui.icon('check', 16) }} Select all</button>
+      <button type="button" class="btn btn-ghost" data-select-all="none">{{ ui.icon('refresh', 16) }} Clear</button>
+    </div>
+
+    <div class="form__row">
+      <label for="remarks">Remarks (optional, saved with every record)</label>
+      <input type="text" id="remarks" name="remarks" maxlength="160" placeholder="e.g. Verified at the registration desk">
+    </div>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th class="check-col"><input type="checkbox" data-check-all="present" aria-label="Select all present"></th>
+            <th>#</th><th>Student</th><th>Roll no</th><th>Registration ID</th><th>Current status</th><th>Marked on</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in registrations %}
+            <tr>
+              <td class="check-col">
+                <input type="checkbox" name="present" value="{{ r.id }}" data-mark-toggle
+                       {% if r.attendance and r.attendance.status == 'PRESENT' %}checked{% endif %}
+                       aria-label="Mark {{ r.student.name }} present">
+                <input type="hidden" name="absent" value="{{ r.id }}">
+              </td>
+              <td>{{ loop.index }}</td>
+              <td class="link-strong">{{ r.student.name }}<small class="block muted">{{ r.student.department }}</small></td>
+              <td>{{ r.student.roll_number or '-' }}</td>
+              <td><code class="code-chip">{{ r.registration_id }}</code></td>
+              <td><span class="badge {{ r.attendance_class }}">{{ r.attendance_status }}</span></td>
+              <td class="small nowrap">{{ r.attendance.marked_at | datetime_fmt if r.attendance else '-' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </form>
+{% else %}
+  <div class="card empty">
+    {{ ui.icon('clipboard', 40) }}
+    <p><strong>No confirmed participants to mark.</strong></p>
+    <p class="muted">Registrations appear here as soon as students register for this event.</p>
+    <a class="btn btn-faculty btn-sm" href="{{ url_for('faculty.event_registrations', event_id=event.id) }}">
+      {{ ui.icon('users', 15) }} View registrations
+    </a>
+  </div>
+{% endif %}
+{% endblock %}

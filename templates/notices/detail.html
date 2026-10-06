@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% block title %}{{ notice.title }} — {{ APP_NAME }}{% endblock %}
+
+{% block content %}
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+  <a href="{{ url_for('main.role_home') }}">Dashboard</a> {{ ui.icon('chevron-right', 13) }}
+  <a href="{{ url_for('notices.index') }}">Notice Board</a> {{ ui.icon('chevron-right', 13) }}
+  <span>{{ notice.title | shorten(40) }}</span>
+</nav>
+
+<article class="card">
+  <div class="chip-row">
+    {% if notice.is_important %}<span class="badge badge-important">{{ ui.icon('alert', 13) }} Important notice</span>{% endif %}
+    <span class="chip">{{ notice.audience }}</span>
+    <span class="chip">{{ ui.icon('calendar', 14) }} {{ notice.published_at | datetime_fmt }}</span>
+  </div>
+  <h1 class="mt-sm">{{ notice.title }}</h1>
+  <p class="muted">Posted by {{ notice.author_name }} &middot; {{ ORG_NAME }}</p>
+  <div class="prose">{{ notice.description }}</div>
+</article>
+
+<div class="page-head__actions">
+  <a class="btn btn-ghost" href="{{ url_for('notices.index') }}">{{ ui.icon('chevron-left', 16) }} Notice board</a>
+  <a class="btn btn-primary" href="{{ url_for('events.catalogue') }}">{{ ui.icon('calendar', 16) }} Browse events</a>
+</div>
+{% endblock %}

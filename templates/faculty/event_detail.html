@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% block title %}{{ event.title }} — Faculty | {{ APP_NAME }}{% endblock %}
+{% block body_class %}app-body app-body--faculty{% endblock %}
+
+{% block content %}
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+  <a href="{{ url_for('faculty.dashboard') }}">Dashboard</a> {{ ui.icon('chevron-right', 13) }}
+  <a href="{{ url_for('faculty.events') }}">Events</a> {{ ui.icon('chevron-right', 13) }}
+  <span>{{ event.title | shorten(40) }}</span>
+</nav>
+
+<div class="page-head page-head--faculty">
+  <div>
+    <span class="badge {{ event.status_class() }}">{{ event.status }}</span>
+    <h1>{{ event.title }}</h1>
+    <p class="muted">{{ event.event_date | date_fmt }} &middot; {{ event.time_range }} &middot; {{ event.venue }}</p>
+  </div>
+  <div class="page-head__actions">
+    <a class="btn btn-faculty" href="{{ url_for('faculty.attendance', event_id=event.id) }}">{{ ui.icon('check', 17) }} Mark attendance</a>
+    <a class="btn btn-ghost" href="{{ url_for('faculty.event_registrations', event_id=event.id) }}">{{ ui.icon('users', 17) }} Registrations</a>
+    <a class="btn btn-ghost" href="{{ url_for('faculty.attendees', event_id=event.id) }}">{{ ui.icon('list', 17) }} Attendees</a>
+    <form method="post" action="{{ url_for('faculty.remind_participants', event_id=event.id) }}" class="inline-form">
+      <button type="submit" class="btn btn-ghost">{{ ui.icon('mail', 17) }} Remind participants</button>
+    </form>
+  </div>
+</div>
+
+<div class="grid grid--2 grid--main">
+  <div class="stack">
+    <section class="card">
+      <div class="card__head"><h3>{{ ui.icon('notice', 19) }} Event description</h3></div>
+      <p class="prose">{{ event.description }}</p>
+      <div class="detail-grid mt">
+        <div><span class="detail-grid__label">Organizer</span>{{ event.organizer.name }}</div>
+        <div><span class="detail-grid__label">Category</span>{{ event.category }}</div>
+        <div><span class="detail-grid__label">Capacity</span>{{ event.max_capacity }}</div>
+        <div><span class="detail-grid__label">Registration deadline</span>{{ event.registration_deadline | datetime_fmt }}</div>
+        <div><span class="detail-grid__label">Average rating</span>{{ stats.average_rating or '-' }}</div>
+        <div><span class="detail-grid__label">Feedback count</span>{{ stats.feedback_count }}</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card__head">
+        <h3>{{ ui.icon('users', 19) }} Confirmed participants</h3>
+        <a class="btn btn-sm btn-ghost" href="{{ url_for('faculty.event_registrations', event_id=event.id) }}">Manage</a>
+      </div>
+      {% if confirmed %}
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Student</th><th>Roll no</th><th>Registration ID</th><th>Attendance</th><th class="right">Toggle</th></tr></thead>
+            <tbody>
+              {% for r in confirmed[:12] %}
+                <tr>
+                  <td class="link-strong">{{ r.student.name }}</td>
+                  <td>{{ r.student.roll_number or '-' }}</td>
+                  <td><code class="code-chip">{{ r.registration_id }}</code></td>
+                  <td><span class="badge {{ r.attendance_class }}">{{ r.attendance_status }}</span></td>
+                  <td class="right">
+                    <form method="post" action="{{ url_for('faculty.toggle_attendance', registration_id=r.id) }}" class="inline-form">
+                      <button type="submit" class="btn btn-sm {% if r.attendance and r.attendance.status == 'PRESENT' %}btn-ghost{% else %}btn-faculty{% endif %}">
+                        {{ ui.icon('refresh', 14) }} {{ 'Mark absent' if r.attendance and r.attendance.status == 'PRESENT' else 'Mark present' }}
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% if confirmed | length > 12 %}
+          <p class="muted small">Showing 12 of {{ confirmed | length }}. Use the Registrations page for the full list.</p>
+        {% endif %}
+      {% else %}
+        <p class="muted">No participants have registered for this event yet.</p>
+      {% endif %}
+    </section>
+  </div>
+
+  <div class="stack">
+    <section class="card card--faculty">
+      <div class="card__head"><h3>{{ ui.icon('chart', 19) }} Live statistics</h3></div>
+      <div class="mini-stat-grid">
+        <div><strong>{{ stats.confirmed }}</strong><span>Registered</span></div>
+        <div><strong>{{ stats.present }}</strong><span>Present</span></div>
+        <div><strong>{{ stats.absent }}</strong><span>Absent</span></div>
+        <div><strong>{{ stats.unmarked }}</strong><span>Unmarked</span></div>
+        <div><strong>{{ stats.fill_rate }}%</strong><span>Fill rate</span></div>
+        <div><strong>{{ stats.attendance_rate }}%</strong><span>Attendance</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card__head"><h3>{{ ui.icon('file', 19) }} Reports</h3></div>
+      <div class="stack-sm">
+        <a class="btn btn-sm btn-ghost btn-block" href="{{ url_for('faculty.attendance_report', event_id=event.id) }}">
+          {{ ui.icon('download', 15) }} Attendance register (PDF)
+        </a>
+        <a class="btn btn-sm btn-ghost btn-block" href="{{ url_for('faculty.feedback') }}">
+          {{ ui.icon('feedback', 15) }} Feedback report
+        </a>
+        <a class="btn btn-sm btn-ghost btn-block" href="{{ url_for('events.detail', event_id=event.id) }}">
+          {{ ui.icon('eye', 15) }} Public event page
+        </a>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

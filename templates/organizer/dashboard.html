@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% import "_macros.html" as m %}
+{% block title %}Organizer Dashboard — {{ APP_NAME }} | {{ APP_TITLE }}{% endblock %}
+{% block body_class %}app-body app-body--organizer{% endblock %}
+
+{% block content %}
+<div class="page-head page-head--organizer">
+  <div>
+    <span class="role-pill role-pill--organizer">Organizer Portal</span>
+    <h1>{{ current_user.name }}</h1>
+    <p class="muted">{{ current_user.organization or 'AGC Event Committee' }} &middot; {{ ORG_NAME }}</p>
+  </div>
+  <div class="page-head__actions">
+    <a class="btn btn-ghost" href="{{ url_for('organizer.statistics') }}">{{ ui.icon('chart', 17) }} Statistics</a>
+    <a class="btn btn-organizer" href="{{ url_for('organizer.create_event') }}">{{ ui.icon('plus', 17) }} Create event</a>
+  </div>
+</div>
+
+<section class="command-bar">
+  <div class="command-bar__text">
+    <h2>Event command center</h2>
+    <p>Create new campus events, manage registrations, verify attendance and issue certificates.</p>
+  </div>
+  <div class="command-bar__actions">
+    <a class="btn btn-organizer" href="{{ url_for('organizer.create_event') }}">{{ ui.icon('plus', 16) }} Create event</a>
+    <a class="btn btn-ghost" href="{{ url_for('organizer.participants') }}">{{ ui.icon('users', 16) }} Participants</a>
+    <a class="btn btn-ghost" href="{{ url_for('organizer.create_notice') }}">{{ ui.icon('bell', 16) }} New notice</a>
+  </div>
+</section>
+
+<div class="grid grid--4 stat-grid">
+  {{ m.stat_card('Total Events', stats.total_events, 'calendar', hint='Created by you', tone='organizer',
+      endpoint='organizer.events') }}
+  {{ m.stat_card('Upcoming Events', stats.upcoming_events, 'clock',
+      hint='Ongoing: ' ~ stats.ongoing_events, tone='info', endpoint='organizer.events', params={'status': 'UPCOMING'}) }}
+  {{ m.stat_card('Total Registrations', stats.total_registrations, 'users', hint='Confirmed seats', tone='primary',
+      endpoint='organizer.participants') }}
+  {{ m.stat_card('Total Attendees', stats.total_attendees, 'check-circle',
+      hint='Average rating: ' ~ (stats.average_rating or '-'), tone='success',
+      endpoint='organizer.attendance_records') }}
+</div>
+
+<div class="grid grid--2 grid--main">
+  <div class="stack">
+    <section class="card card--organizer">
+      <div class="card__head">
+        <h3>{{ ui.icon('calendar', 19) }} Upcoming events</h3>
+        <a class="btn btn-sm btn-organizer" href="{{ url_for('organizer.create_event') }}">{{ ui.icon('plus', 15) }} New event</a>
+      </div>
+      {% if upcoming %}
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Event</th><th>Schedule</th><th>Registrations</th><th class="right">Manage</th></tr></thead>
+            <tbody>
+              {% for event in upcoming %}
+                <tr>
+                  <td>
+                    <a class="link-strong" href="{{ url_for('organizer.event_detail', event_id=event.id) }}">{{ event.title }}</a>
+                    <small class="block muted">{{ event.category }} &middot; {{ event.venue }}</small>
+                  </td>
+                  <td class="nowrap">{{ event.event_date | date_fmt }}<small class="block muted">{{ event.time_range }}</small></td>
+                  <td><span class="badge badge-info">{{ event.seats_taken }}/{{ event.max_capacity }}</span></td>
+                  <td class="right nowrap">
+                    <a class="btn btn-sm btn-ghost" href="{{ url_for('organizer.event_registrations', event_id=event.id) }}">{{ ui.icon('users', 15) }}</a>
+                    <a class="btn btn-sm btn-organizer" href="{{ url_for('organizer.edit_event', event_id=event.id) }}">{{ ui.icon('edit', 15) }}</a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty">
+          {{ ui.icon('calendar', 34) }}
+          <p><strong>No upcoming events.</strong></p>
+          <p class="muted">Create your first AGC campus event to start accepting registrations.</p>
+          <a class="btn btn-organizer btn-sm" href="{{ url_for('organizer.create_event') }}">{{ ui.icon('plus', 15) }} Create event</a>
+        </div>
+      {% endif %}
+    </section>
+
+    <section class="card">
+      <div class="card__head">
+        <h3>{{ ui.icon('clipboard', 19) }} Attendance needs attention</h3>
+        <a class="btn btn-sm btn-ghost" href="{{ url_for('organizer.attendance_records') }}">All records</a>
+      </div>
+      {% if needs_attention %}
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Event</th><th>Unmarked</th><th class="right">Actions</th></tr></thead>
+            <tbody>
+              {% for event, unmarked, total in needs_attention %}
+                <tr>
+                  <td>
+                    <a class="link-strong" href="{{ url_for('organizer.event_detail', event_id=event.id) }}">{{ event.title }}</a>
+                    <small class="block muted">{{ event.event_date | date_fmt }}</small>
+                  </td>
+                  <td><span class="badge badge-important">{{ unmarked }} / {{ total }}</span></td>
+                  <td class="right nowrap">
+                    <a class="btn btn-sm btn-organizer" href="{{ url_for('organizer.attendance', event_id=event.id) }}">
+                      {{ ui.icon('check', 15) }} Verify
+                    </a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty">
+          {{ ui.icon('check-circle', 32) }}
+          <p><strong>All attendance verified.</strong></p>
+        </div>
+      {% endif %}
+    </section>
+
+    <section class="card">
+      <div class="card__head">
+        <h3>{{ ui.icon('chart', 19) }} Top performing events</h3>
+        <a class="btn btn-sm btn-ghost" href="{{ url_for('organizer.statistics') }}">Full statistics {{ ui.icon('arrow-right', 15) }}</a>
+      </div>
+      {% if top_events %}
+        <div class="bar-chart">
+          {% set max_seats = top_events[0].seats_taken or 1 %}
+          {% for event in top_events %}
+            <div class="bar-chart__row">
+              <span class="bar-chart__label link-strong">{{ event.title | shorten(28) }}</span>
+              <div class="bar-chart__track"><span style="width: {{ ((event.seats_taken / max_seats) * 100) | round(0, 'floor') }}%"></span></div>
+              <span class="bar-chart__value">{{ event.seats_taken }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="muted">Create an event to see registration statistics.</p>
+      {% endif %}
+    </section>
+  </div>
+
+  <div class="stack">
+    <section class="card card--organizer">
+      <div class="card__head"><h3>{{ ui.icon('user', 19) }} Organizer profile</h3></div>
+      <div class="person">
+        <span class="avatar avatar--lg">{{ current_user.initials }}</span>
+        <div>
+          <strong>{{ current_user.name }}</strong>
+          <small class="muted">{{ current_user.display_meta }}</small>
+        </div>
+      </div>
+      <div class="progress"><div class="progress__bar"><span style="width: {{ profile_score }}%"></span></div></div>
+      <p class="muted small">{{ profile_score }}% profile complete</p>
+      <div class="stack-sm">
+        <a class="btn btn-sm btn-ghost btn-block" href="{{ url_for('profile.view') }}">{{ ui.icon('eye', 15) }} View profile</a>
+        <a class="btn btn-sm btn-ghost btn-block" href="{{ url_for('profile.edit') }}">{{ ui.icon('edit', 15) }} Edit profile</a>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card__head"><h3>{{ ui.icon('grid', 19) }} Quick actions</h3></div>
+      <div class="quick-actions">
+        <a class="quick-action quick-action--organizer" href="{{ url_for('organizer.create_event') }}">{{ ui.icon('plus', 20) }}<span>Create</span></a>
+        <a class="quick-action quick-action--organizer" href="{{ url_for('organizer.events') }}">{{ ui.icon('calendar', 20) }}<span>My events</span></a>
+        <a class="quick-action quick-action--organizer" href="{{ url_for('organizer.participants') }}">{{ ui.icon('users', 20) }}<span>Students</span></a>
+        <a class="quick-action quick-action--organizer" href="{{ url_for('organizer.statistics') }}">{{ ui.icon('chart', 20) }}<span>Stats</span></a>
+        <a class="quick-action quick-action--organizer" href="{{ url_for('organizer.notices') }}">{{ ui.icon('bell', 20) }}<span>Notices</span></a>
+        <a class="quick-action quick-action--organizer" href="{{ url_for('organizer.feedback') }}">{{ ui.icon('feedback', 20) }}<span>Feedback</span></a>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card__head">
+        <h3>{{ ui.icon('feedback', 19) }} Latest feedback</h3>
+        <a class="btn btn-sm btn-ghost" href="{{ url_for('organizer.feedback') }}">All</a>
+      </div>
+      {% if recent_feedback %}
+        <div class="feedback-list">
+          {% for f in recent_feedback %}
+            <article class="feedback-entry">
+              <div class="feedback-entry__head">
+                <div>
+                  <strong>{{ f.student.name }}</strong>
+                  <small class="muted">{{ f.event.title | shorten(30) }}</small>
+                </div>
+                {{ m.star_row(f.rating) }}
+              </div>
+              <p>{{ f.comments | shorten(150) }}</p>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="muted">No feedback yet.</p>
+      {% endif %}
+    </section>
+
+    <section class="card">
+      <div class="card__head">
+        <h3>{{ ui.icon('bell', 19) }} Notices</h3>
+        <a class="btn btn-sm btn-organizer" href="{{ url_for('organizer.create_notice') }}">{{ ui.icon('plus', 15) }} New</a>
+      </div>
+      {% if notices %}
+        <ul class="notice-list">
+          {% for n in notices %}
+            <li>
+              <a href="{{ url_for('organizer.notice_detail', notice_id=n.id) }}">
+                {% if n.is_important %}<span class="dot dot--danger"></span>{% else %}<span class="dot"></span>{% endif %}
+                <strong>{{ n.title | shorten(48) }}</strong>
+                <small class="muted">{{ n.published_at | datetime_fmt }} &middot; {{ n.audience }}</small>
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="muted">No notices published.</p>
+      {% endif %}
+      <p class="muted small">You have published {{ my_notices }} notice(s).</p>
+    </section>
+  </div>
+</div>
+{% endblock %}

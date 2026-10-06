@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% block title %}My Events — {{ APP_NAME }} | {{ APP_TITLE }}{% endblock %}
+{% block body_class %}app-body app-body--organizer{% endblock %}
+
+{% block content %}
+<div class="page-head page-head--organizer">
+  <div>
+    <h1>My Events</h1>
+    <p class="muted">Every event you organise across {{ ORG_NAME }}.</p>
+  </div>
+  <div class="page-head__actions">
+    <a class="btn btn-ghost" href="{{ url_for('organizer.dashboard') }}">{{ ui.icon('chevron-left', 16) }} Dashboard</a>
+    <a class="btn btn-organizer" href="{{ url_for('organizer.create_event') }}">{{ ui.icon('plus', 17) }} Create event</a>
+  </div>
+</div>
+
+<div class="grid grid--4 stat-grid">
+  <div class="stat-card stat-card--organizer"><div class="stat-card__icon">{{ ui.icon('calendar', 22) }}</div>
+    <div class="stat-card__text"><span class="stat-card__value">{{ totals.all }}</span><span class="stat-card__label">All events</span></div></div>
+  <div class="stat-card stat-card--info"><div class="stat-card__icon">{{ ui.icon('clock', 22) }}</div>
+    <div class="stat-card__text"><span class="stat-card__value">{{ totals.upcoming }}</span><span class="stat-card__label">Upcoming</span></div></div>
+  <div class="stat-card stat-card--success"><div class="stat-card__icon">{{ ui.icon('check-circle', 22) }}</div>
+    <div class="stat-card__text"><span class="stat-card__value">{{ totals.completed }}</span><span class="stat-card__label">Completed</span></div></div>
+  <div class="stat-card stat-card--danger"><div class="stat-card__icon">{{ ui.icon('x-circle', 22) }}</div>
+    <div class="stat-card__text"><span class="stat-card__value">{{ totals.cancelled }}</span><span class="stat-card__label">Cancelled</span></div></div>
+</div>
+
+<form class="toolbar" method="get" action="{{ url_for('organizer.events') }}">
+  <div class="toolbar__search">
+    {{ ui.icon('search', 17) }}
+    <input type="search" name="q" value="{{ filters.q or '' }}" placeholder="Search my events…" aria-label="Search my events">
+  </div>
+  <select name="category" aria-label="Category">
+    <option value="all">All categories</option>
+    {% for cat in categories %}
+      <option value="{{ cat }}" {% if filters.category == cat %}selected{% endif %}>{{ cat }}</option>
+    {% endfor %}
+  </select>
+  <select name="status" aria-label="Status">
+    <option value="all">All statuses</option>
+    {% for s in statuses %}
+      <option value="{{ s }}" {% if filters.status == s %}selected{% endif %}>{{ s.title() }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn btn-organizer">{{ ui.icon('filter', 16) }} Apply</button>
+  <a class="btn btn-ghost" href="{{ url_for('organizer.events') }}">{{ ui.icon('refresh', 16) }} Reset</a>
+</form>
+
+<p class="muted">{{ events | length }} event(s) found</p>
+
+{% if events %}
+  <div class="grid grid--2">
+    {% for event in events %}
+      <article class="event-card {% if event.is_cancelled %}is-cancelled{% endif %}">
+        <div class="event-card__media">
+          {% if event.image_filename %}
+            <img src="{{ url_for('static', filename='uploads/' ~ event.image_filename) }}" alt="{{ event.title }}">
+          {% else %}
+            <span class="event-card__category">{{ event.category }}</span>
+            <span class="event-card__monogram">{{ event.title[:2] | upper }}</span>
+          {% endif %}
+          <span class="badge {{ event.status_class() }}">{{ event.status }}</span>
+        </div>
+        <div class="event-card__body">
+          <div class="event-card__meta">
+            <span class="chip">{{ ui.icon('calendar', 14) }}{{ event.event_date | date_fmt }}</span>
+            <span class="chip">{{ ui.icon('clock', 14) }}{{ event.time_range }}</span>
+          </div>
+          <h3 class="event-card__title">
+            <a href="{{ url_for('organizer.event_detail', event_id=event.id) }}">{{ event.title }}</a>
+          </h3>
+          <p class="event-card__venue">{{ ui.icon('pin', 14) }}{{ event.venue }}</p>
+          <div class="mini-stat-grid mini-stat-grid--sm">
+            <div><strong>{{ event.seats_taken }}</strong><span>Registered</span></div>
+            <div><strong>{{ event.max_capacity }}</strong><span>Capacity</span></div>
+            <div><strong>{{ event.attendee_count() }}</strong><span>Attendees</span></div>
+          </div>
+          <div class="event-card__footer">
+            <div class="seat-meter">
+              <div class="seat-meter__bar">
+                <span style="width: {{ ((event.seats_taken / event.max_capacity) * 100) | round(0, 'floor') if event.max_capacity else 0 }}%"></span>
+              </div>
+              <small>{{ event.seats_taken }}/{{ event.max_capacity }} registered</small>
+            </div>
+            <div class="event-card__actions">
+              <a class="btn btn-sm btn-ghost" href="{{ url_for('organizer.edit_event', event_id=event.id) }}">{{ ui.icon('edit', 15) }} Edit</a>
+              <a class="btn btn-sm btn-organizer" href="{{ url_for('organizer.event_detail', event_id=event.id) }}">Manage</a>
+              {% if not event.is_cancelled %}
+                <form method="post" action="{{ url_for('organizer.cancel_event', event_id=event.id) }}" class="inline-form"
+                      data-confirm="Cancel &quot;{{ event.title }}&quot;? All confirmed registrations will be released.">
+                  <button type="submit" class="btn btn-sm btn-danger-ghost">{{ ui.icon('x', 15) }} Cancel event</button>
+                </form>
+              {% else %}
+                <form method="post" action="{{ url_for('organizer.restore_event', event_id=event.id) }}" class="inline-form">
+                  <button type="submit" class="btn btn-sm btn-ghost">{{ ui.icon('refresh', 15) }} Restore</button>
+                </form>
+              {% endif %}
+              <form method="post" action="{{ url_for('organizer.delete_event', event_id=event.id) }}" class="inline-form"
+                    data-confirm="PERMANENTLY delete &quot;{{ event.title }}&quot; and all its registrations? This cannot be undone.">
+                <button type="submit" class="btn btn-sm btn-danger-ghost">{{ ui.icon('trash', 15) }} Delete</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="card empty">
+    {{ ui.icon('calendar', 40) }}
+    <p><strong>You have no events matching this view.</strong></p>
+    <p class="muted">Create a new AGC campus event to start accepting student registrations.</p>
+    <div class="stack-sm">
+      <a class="btn btn-organizer btn-sm" href="{{ url_for('organizer.create_event') }}">{{ ui.icon('plus', 15) }} Create event</a>
+      <a class="btn btn-ghost btn-sm" href="{{ url_for('organizer.events') }}">{{ ui.icon('refresh', 15) }} Reset filters</a>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

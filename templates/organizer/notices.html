@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% block title %}Notices — {{ APP_NAME }} | {{ APP_TITLE }}{% endblock %}
+{% block body_class %}app-body app-body--organizer{% endblock %}
+
+{% block content %}
+<div class="page-head page-head--organizer">
+  <div>
+    <h1>Notice Board</h1>
+    <p class="muted">Publish and manage announcements for {{ ORG_NAME }} campus events.</p>
+  </div>
+  <div class="page-head__actions">
+    <a class="btn btn-organizer" href="{{ url_for('organizer.create_notice') }}">{{ ui.icon('plus', 17) }} New notice</a>
+    <a class="btn btn-ghost" href="{{ url_for('organizer.dashboard') }}">{{ ui.icon('chevron-left', 16) }} Dashboard</a>
+  </div>
+</div>
+
+<div class="toolbar toolbar--tabs">
+  <div class="tab-group">
+    <a class="tab {% if filters.scope != 'mine' %}tab--active{% endif %}" href="{{ url_for('organizer.notices') }}">All notices</a>
+    <a class="tab {% if filters.scope == 'mine' %}tab--active{% endif %}" href="{{ url_for('organizer.notices', scope='mine') }}">Published by me</a>
+  </div>
+</div>
+
+{% if notices %}
+  <div class="table-wrap card">
+    <table class="table">
+      <thead><tr><th>Notice</th><th>Audience</th><th>Published</th><th>Author</th><th class="right">Actions</th></tr></thead>
+      <tbody>
+        {% for n in notices %}
+          <tr>
+            <td>
+              <a class="link-strong" href="{{ url_for('organizer.notice_detail', notice_id=n.id) }}">{{ n.title }}</a>
+              {% if n.is_important %}<span class="badge badge-important">{{ ui.icon('alert', 12) }} Important</span>{% endif %}
+              <small class="block muted">{{ n.description | shorten(140) }}</small>
+            </td>
+            <td><span class="chip">{{ n.audience }}</span></td>
+            <td class="nowrap small">{{ n.published_at | datetime_fmt }}</td>
+            <td>{{ n.author_name }}</td>
+            <td class="right nowrap">
+              {% if n.author_id == my_id %}
+                <a class="btn btn-sm btn-ghost" href="{{ url_for('organizer.edit_notice', notice_id=n.id) }}">{{ ui.icon('edit', 14) }} Edit</a>
+                <form method="post" action="{{ url_for('organizer.delete_notice', notice_id=n.id) }}" class="inline-form"
+                      data-confirm="Delete the notice &quot;{{ n.title }}&quot;?">
+                  <button type="submit" class="btn btn-sm btn-danger-ghost">{{ ui.icon('trash', 14) }} Delete</button>
+                </form>
+              {% else %}
+                <span class="muted small">Published by another organizer</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="card empty">
+    {{ ui.icon('bell', 40) }}
+    <p><strong>No notices published.</strong></p>
+    <p class="muted">Publish a notice so students and faculty see your announcements.</p>
+    <a class="btn btn-organizer btn-sm" href="{{ url_for('organizer.create_notice') }}">{{ ui.icon('plus', 15) }} Create notice</a>
+  </div>
+{% endif %}
+{% endblock %}

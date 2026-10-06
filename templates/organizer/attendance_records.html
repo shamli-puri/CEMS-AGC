@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% block title %}Attendance Records — {{ APP_NAME }} | {{ APP_TITLE }}{% endblock %}
+{% block body_class %}app-body app-body--organizer{% endblock %}
+
+{% block content %}
+<div class="page-head page-head--organizer">
+  <div>
+    <h1>Attendance Records</h1>
+    <p class="muted">Verified attendance across all events you organise.</p>
+  </div>
+  <div class="page-head__actions">
+    <a class="btn btn-ghost" href="{{ url_for('organizer.participants_csv') }}">{{ ui.icon('download', 17) }} Export CSV</a>
+    <a class="btn btn-organizer" href="{{ url_for('organizer.dashboard') }}">{{ ui.icon('chevron-left', 16) }} Dashboard</a>
+  </div>
+</div>
+
+<div class="grid grid--4 stat-grid">
+  <div class="stat-card stat-card--organizer"><div class="stat-card__icon">{{ ui.icon('calendar', 22) }}</div>
+    <div class="stat-card__text"><span class="stat-card__value">{{ stats.total_events }}</span><span class="stat-card__label">My events</span></div></div>
+  <div class="stat-card stat-card--primary"><div class="stat-card__icon">{{ ui.icon('users', 22) }}</div>
+    <div class="stat-card__text"><span class="stat-card__value">{{ stats.total_registrations }}</span><span class="stat-card__label">Registrations</span></div></div>
+  <div class="stat-card stat-card--success"><div class="stat-card__icon">{{ ui.icon('check-circle', 22) }}</div>
+    <div class="stat-card__text"><span class="stat-card__value">{{ stats.total_attendees }}</span><span class="stat-card__label">Present</span></div></div>
+  <div class="stat-card stat-card--info"><div class="stat-card__icon">{{ ui.icon('clock', 22) }}</div>
+    <div class="stat-card__text"><span class="stat-card__value">{{ stats.upcoming_events }}</span><span class="stat-card__label">Upcoming</span></div></div>
+</div>
+
+{% if records %}
+  <div class="table-wrap card">
+    <table class="table">
+      <thead><tr><th>Student</th><th>Event</th><th>Event date</th><th>Status</th><th>Marked on</th><th>Marked by</th><th class="right">Update</th></tr></thead>
+      <tbody>
+        {% for a in records %}
+          <tr>
+            <td class="link-strong">{{ a.student.name }}<small class="block muted">{{ a.student.roll_number or a.student.email }}</small></td>
+            <td>{{ a.event.title }}</td>
+            <td class="nowrap">{{ a.event.event_date | date_fmt }}</td>
+            <td><span class="badge {{ a.status_class() }}">{{ a.status_label }}</span></td>
+            <td class="nowrap small">{{ a.marked_at | datetime_fmt }}</td>
+            <td>{{ a.marked_by.name if a.marked_by else '-' }}</td>
+            <td class="right">
+              <a class="btn btn-sm btn-organizer" href="{{ url_for('organizer.attendance', event_id=a.event_id) }}">
+                {{ ui.icon('edit', 14) }} Update
+              </a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="card empty">
+    {{ ui.icon('clipboard', 40) }}
+    <p><strong>No attendance has been verified yet.</strong></p>
+    <p class="muted">Open one of your events and verify the attendance sheet.</p>
+    <a class="btn btn-organizer btn-sm" href="{{ url_for('organizer.events') }}">{{ ui.icon('calendar', 15) }} My events</a>
+  </div>
+{% endif %}
+{% endblock %}

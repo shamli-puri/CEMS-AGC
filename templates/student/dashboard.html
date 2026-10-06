@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% import "_macros.html" as m %}
+{% block title %}Student Dashboard — {{ APP_NAME }} | {{ APP_TITLE }}{% endblock %}
+{% block body_class %}app-body app-body--student{% endblock %}
+
+{% block content %}
+<section class="dashboard-hero dashboard-hero--student">
+  <div class="dashboard-hero__text">
+    <span class="role-pill role-pill--student">Student Portal</span>
+    <h1>Welcome back, {{ current_user.name.split()[0] }}</h1>
+    <p>
+      {{ current_user.display_meta }} &middot; {{ ORG_NAME }} &middot;
+      <a href="{{ url_for('profile.view') }}" style="color:#dbe6ff">View profile</a>
+    </p>
+  </div>
+  <div class="dashboard-hero__actions">
+    <a class="btn btn-light" href="{{ url_for('student.events') }}">{{ ui.icon('search', 17) }} Browse events</a>
+    <a class="btn btn-outline-light" href="{{ url_for('student.registrations') }}">{{ ui.icon('ticket', 17) }} My tickets</a>
+  </div>
+</section>
+
+<div class="grid grid--4 stat-grid">
+  {{ m.stat_card('Upcoming Events', stats.upcoming, 'calendar',
+      hint='Events you have registered for', tone='student',
+      endpoint='student.registrations', params={'scope': 'upcoming'}) }}
+  {{ m.stat_card('Registered Events', stats.confirmed, 'ticket',
+      hint='All confirmed registrations', tone='primary',
+      endpoint='student.registrations') }}
+  {{ m.stat_card('Attended Events', stats.attended, 'check-circle',
+      hint='Verified present', tone='success',
+      endpoint='student.attendance') }}
+  {{ m.stat_card('Certificates', stats.certificates, 'certificate',
+      hint='Downloadable PDF', tone='accent',
+      endpoint='student.certificates') }}
+</div>
+
+<div class="grid grid--2 grid--main">
+  <div class="stack">
+    <!-- Upcoming registrations -->
+    <section class="card">
+      <div class="card__head">
+        <h3>{{ ui.icon('ticket', 19) }} My upcoming registrations</h3>
+        <a class="btn btn-sm btn-ghost" href="{{ url_for('student.registrations') }}">View all {{ ui.icon('arrow-right', 15) }}</a>
+      </div>
+      {% if upcoming_regs %}
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr><th>Event</th><th>Date</th><th>Registration ID</th><th class="right">Actions</th></tr>
+            </thead>
+            <tbody>
+              {% for r in upcoming_regs %}
+                <tr>
+                  <td>
+                    <a class="link-strong" href="{{ url_for('student.event_detail', event_id=r.event.id) }}">{{ r.event.title }}</a>
+                    <small class="block muted">{{ r.event.category }} &middot; {{ r.event.venue }}</small>
+                  </td>
+                  <td>{{ r.event.event_date | date_fmt }}<small class="block muted">{{ r.event.time_range }}</small></td>
+                  <td><code class="code-chip">{{ r.registration_id }}</code></td>
+                  <td class="right nowrap">
+                    <a class="btn btn-sm btn-primary" href="{{ url_for('student.ticket', registration_id=r.id) }}">
+                      {{ ui.icon('qr', 15) }} QR Ticket
+                    </a>
+                    <form method="post" action="{{ url_for('student.cancel_registration', registration_id=r.id) }}"
+                          class="inline-form" data-confirm="Cancel registration {{ r.registration_id }}? This cannot be undone after attendance is marked.">
+                      <button type="submit" class="btn btn-sm btn-danger-ghost">{{ ui.icon('x', 15) }} Cancel</button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty">
+          {{ ui.icon('calendar', 34) }}
+          <p><strong>No upcoming registrations yet.</strong></p>
+          <p class="muted">Browse the AGC event catalogue and register to get your QR ticket instantly.</p>
+          <a class="btn btn-primary btn-sm" href="{{ url_for('student.events') }}">{{ ui.icon('search', 15) }} Find events</a>
+        </div>
+      {% endif %}
+    </section>
+
+    <!-- Upcoming campus events -->
+    <section class="card card--student">
+      <div class="card__head">
+        <h3>{{ ui.icon('grid', 19) }} Upcoming AGC campus events</h3>
+        <a class="btn btn-sm btn-ghost" href="{{ url_for('student.events') }}">See all events {{ ui.icon('arrow-right', 15) }}</a>
+      </div>
+      {% if upcoming_events %}
+        <div class="chip-row">
+          {% for event in upcoming_events %}
+            <a class="event-pill" href="{{ url_for('student.event_detail', event_id=event.id) }}">
+              <span class="badge {{ event.status_class() }}">{{ event.status }}</span>
+              <strong>{{ event.title }}</strong>
+              <small class="muted">{{ event.event_date | date_fmt }} &middot; {{ event.category }} &middot; {{ event.seats_left }} seats left</small>
+            </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="muted">No upcoming events are published at the moment. Check back soon.</p>
+      {% endif %}
+    </section>
+
+    <!-- Recent history -->
+    <section class="card">
+      <div class="card__head">
+        <h3>{{ ui.icon('clock', 19) }} Recently completed</h3>
+        <a class="btn btn-sm btn-ghost" href="{{ url_for('student.registrations', scope='past') }}">History</a>
+      </div>
+      {% if past_regs %}
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Event</th><th>Date</th><th>Attendance</th><th class="right">Action</th></tr></thead>
+            <tbody>
+              {% for r in past_regs %}
+                <tr>
+                  <td class="link-strong">{{ r.event.title }}</td>
+                  <td>{{ r.event.event_date | date_fmt }}</td>
+                  <td><span class="badge {{ r.attendance_class }}">{{ r.attendance_status }}</span></td>
+                  <td class="right">
+                    {% if r.attendance and r.attendance.status == 'PRESENT' %}
+                      <a class="btn btn-sm btn-ghost" href="{{ url_for('student.certificates') }}">{{ ui.icon('certificate', 15) }} Certificates</a>
+                    {% else %}
+                      <span class="muted small">Awaiting certificate</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="muted">Completed event history will appear here.</p>
+      {% endif %}
+    </section>
+  </div>
+
+  <div class="stack">
+    <!-- Profile completeness -->
+    <section class="card card--student">
+      <div class="card__head"><h3>{{ ui.icon('user', 19) }} My profile</h3></div>
+      <div class="progress" title="{{ profile_score }}% complete">
+        <div class="progress__bar"><span style="width: {{ profile_score }}%"></span></div>
+      </div>
+      <p class="muted small">{{ profile_score }}% complete &middot; {{ current_user.email }}</p>
+      <div class="stack-sm">
+        <a class="btn btn-sm btn-ghost btn-block" href="{{ url_for('profile.view') }}">{{ ui.icon('eye', 15) }} View profile</a>
+        <a class="btn btn-sm btn-ghost btn-block" href="{{ url_for('profile.edit') }}">{{ ui.icon('edit', 15) }} Edit profile</a>
+        <a class="btn btn-sm btn-ghost btn-block" href="{{ url_for('profile.change_password') }}">{{ ui.icon('lock', 15) }} Change password</a>
+      </div>
+    </section>
+
+    <!-- Notices -->
+    <section class="card">
+      <div class="card__head">
+        <h3>{{ ui.icon('bell', 19) }} Notices</h3>
+        <a class="btn btn-sm btn-ghost" href="{{ url_for('student.notices') }}">All</a>
+      </div>
+      {% if notices %}
+        <ul class="notice-list">
+          {% for n in notices %}
+            <li>
+              <a href="{{ url_for('student.notice_detail', notice_id=n.id) }}">
+                {% if n.is_important %}<span class="dot dot--danger"></span>{% else %}<span class="dot"></span>{% endif %}
+                <strong>{{ n.title }}</strong>
+                <small class="muted">{{ n.published_at | datetime_fmt }} &middot; {{ n.author_name }}</small>
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="muted">No notices right now.</p>
+      {% endif %}
+    </section>
+
+    <!-- Certificates -->
+    <section class="card">
+      <div class="card__head">
+        <h3>{{ ui.icon('certificate', 19) }} Latest certificates</h3>
+        <a class="btn btn-sm btn-ghost" href="{{ url_for('student.certificates') }}">All</a>
+      </div>
+      {% if recent_certificates %}
+        <ul class="cert-list">
+          {% for c in recent_certificates %}
+            <li>
+              <div>
+                <strong>{{ c.event.title }}</strong>
+                <small class="muted">{{ c.certificate_id }} &middot; {{ c.issue_date_label }}</small>
+              </div>
+              <a class="btn btn-sm btn-accent" href="{{ url_for('student.certificate_pdf', certificate_id=c.id) }}">
+                {{ ui.icon('download', 15) }} PDF
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="muted">Certificates appear once attendance is verified for a completed event.</p>
+      {% endif %}
+    </section>
+
+    <!-- Quick actions -->
+    <section class="card">
+      <div class="card__head"><h3>{{ ui.icon('grid', 19) }} Quick actions</h3></div>
+      <div class="quick-actions">
+        <a class="quick-action" href="{{ url_for('student.events') }}">{{ ui.icon('search', 20) }}<span>Search events</span></a>
+        <a class="quick-action" href="{{ url_for('student.registrations') }}">{{ ui.icon('ticket', 20) }}<span>My tickets</span></a>
+        <a class="quick-action" href="{{ url_for('student.attendance') }}">{{ ui.icon('clipboard', 20) }}<span>Attendance</span></a>
+        <a class="quick-action" href="{{ url_for('student.certificates') }}">{{ ui.icon('certificate', 20) }}<span>Certificates</span></a>
+        <a class="quick-action" href="{{ url_for('student.feedback_list') }}">{{ ui.icon('feedback', 20) }}<span>Feedback</span></a>
+        <a class="quick-action" href="{{ url_for('student.notices') }}">{{ ui.icon('bell', 20) }}<span>Notices</span></a>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

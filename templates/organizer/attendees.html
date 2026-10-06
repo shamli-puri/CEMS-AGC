@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% block title %}Attendees — {{ event.title }} | {{ APP_NAME }}{% endblock %}
+{% block body_class %}app-body app-body--organizer{% endblock %}
+
+{% block content %}
+<div class="page-head page-head--organizer">
+  <div>
+    <h1>Attendee List</h1>
+    <p class="muted">{{ event.title }} &middot; {{ event.event_date | date_fmt }} &middot; {{ event.venue }}</p>
+  </div>
+  <div class="page-head__actions">
+    <a class="btn btn-organizer" href="{{ url_for('organizer.attendance', event_id=event.id) }}">{{ ui.icon('clipboard', 17) }} Verify attendance</a>
+    <a class="btn btn-ghost" href="{{ url_for('organizer.attendance_report', event_id=event.id) }}">{{ ui.icon('download', 17) }} PDF</a>
+    <a class="btn btn-ghost" href="{{ url_for('organizer.event_registrations', event_id=event.id) }}">{{ ui.icon('users', 17) }} Registrations</a>
+  </div>
+</div>
+
+{% if registrations %}
+  <div class="grid grid--4 stat-grid">
+    <div class="stat-card stat-card--primary"><div class="stat-card__icon">{{ ui.icon('users', 22) }}</div>
+      <div class="stat-card__text"><span class="stat-card__value">{{ stats.confirmed }}</span><span class="stat-card__label">Registered</span></div></div>
+    <div class="stat-card stat-card--success"><div class="stat-card__icon">{{ ui.icon('check-circle', 22) }}</div>
+      <div class="stat-card__text"><span class="stat-card__value">{{ stats.present }}</span><span class="stat-card__label">Present</span></div></div>
+    <div class="stat-card stat-card--danger"><div class="stat-card__icon">{{ ui.icon('x-circle', 22) }}</div>
+      <div class="stat-card__text"><span class="stat-card__value">{{ stats.absent }}</span><span class="stat-card__label">Absent</span></div></div>
+    <div class="stat-card stat-card--info"><div class="stat-card__icon">{{ ui.icon('clock', 22) }}</div>
+      <div class="stat-card__text"><span class="stat-card__value">{{ stats.unmarked }}</span><span class="stat-card__label">Pending</span></div></div>
+  </div>
+
+  <div class="table-wrap card">
+    <table class="table">
+      <thead><tr><th>#</th><th>Student</th><th>Roll no</th><th>Department</th><th>Registration ID</th><th>Attendance</th><th>Marked on</th><th class="right">Certificate</th></tr></thead>
+      <tbody>
+        {% for r in registrations %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td class="link-strong">{{ r.student.name }}<small class="block muted">{{ r.student.email }}</small></td>
+            <td>{{ r.student.roll_number or '-' }}</td>
+            <td>{{ r.student.department or '-' }}</td>
+            <td><code class="code-chip">{{ r.registration_id }}</code></td>
+            <td><span class="badge {{ r.attendance_class }}">{{ r.attendance_status }}</span></td>
+            <td class="small nowrap">{{ r.attendance.marked_at | datetime_fmt if r.attendance else '-' }}</td>
+            <td class="right">
+              {% if r.certificate %}
+                <a class="btn btn-sm btn-accent" href="{{ url_for('organizer.certificate_pdf', certificate_id=r.certificate.id) }}">
+                  {{ ui.icon('download', 14) }} PDF
+                </a>
+              {% else %}
+                <span class="muted small">Not issued</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="card empty">
+    {{ ui.icon('users', 40) }}
+    <p><strong>No confirmed participants yet.</strong></p>
+    <a class="btn btn-organizer btn-sm" href="{{ url_for('organizer.event_detail', event_id=event.id) }}">{{ ui.icon('chevron-left', 15) }} Back to event</a>
+  </div>
+{% endif %}
+{% endblock %}

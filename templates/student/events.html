@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% import "_macros.html" as m %}
+{% block title %}Campus Events — {{ APP_NAME }} | {{ APP_TITLE }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>AGC Campus Events</h1>
+    <p class="muted">Search, filter and register for events organised across {{ ORG_NAME }}.</p>
+  </div>
+  <a class="btn btn-ghost" href="{{ url_for('student.dashboard') }}">{{ ui.icon('chevron-left', 16) }} Dashboard</a>
+</div>
+
+<form class="toolbar" method="get" action="{{ url_for('student.events') }}">
+  <div class="toolbar__search">
+    {{ ui.icon('search', 17) }}
+    <input type="search" name="q" value="{{ filters.q or '' }}" placeholder="Search by event title, description or venue…"
+           aria-label="Search events">
+  </div>
+  <select name="category" aria-label="Filter by category">
+    <option value="all">All categories</option>
+    {% for cat in categories %}
+      <option value="{{ cat }}" {% if filters.category == cat %}selected{% endif %}>{{ cat }}</option>
+    {% endfor %}
+  </select>
+  <select name="status" aria-label="Filter by status">
+    <option value="all">All statuses</option>
+    {% for s in ['UPCOMING', 'ONGOING', 'COMPLETED', 'CANCELLED'] %}
+      <option value="{{ s }}" {% if filters.status == s %}selected{% endif %}>{{ s.title() }}</option>
+    {% endfor %}
+  </select>
+  <input type="date" name="date_from" value="{{ filters.date_from or '' }}" aria-label="From date" title="From date">
+  <input type="date" name="date_to" value="{{ filters.date_to or '' }}" aria-label="To date" title="To date">
+  <button type="submit" class="btn btn-primary">{{ ui.icon('filter', 16) }} Apply filters</button>
+  <a class="btn btn-ghost" href="{{ url_for('student.events') }}">{{ ui.icon('refresh', 16) }} Reset</a>
+</form>
+
+{% if filter_error %}<p class="alert alert--warning">{{ filter_error }}</p>{% endif %}
+
+<div class="result-bar">
+  <span class="muted">{{ events | length }} event(s) found</span>
+  <div class="view-toggle" role="group" aria-label="Layout">
+    <button type="button" class="view-btn" data-view-toggle="grid" data-view-target="#event-results" aria-pressed="true">
+      {{ ui.icon('grid', 16) }} Grid
+    </button>
+    <button type="button" class="view-btn" data-view-toggle="list" data-view-target="#event-results" aria-pressed="false">
+      {{ ui.icon('list', 16) }} List
+    </button>
+  </div>
+</div>
+
+{% if events %}
+  <div class="grid grid--3" id="event-results" data-view="grid">
+    {% for event in events %}
+      {{ m.event_card(event, show_register=true,
+                      registered=(event.id in registered_ids),
+                      registration_id=registered_ids.get(event.id)) }}
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="card empty">
+    {{ ui.icon('search', 40) }}
+    <p><strong>No events match your search or filters.</strong></p>
+    <p class="muted">Try clearing the filters or searching a different keyword.</p>
+    <a class="btn btn-primary btn-sm" href="{{ url_for('student.events') }}">{{ ui.icon('refresh', 15) }} Reset filters</a>
+  </div>
+{% endif %}
+{% endblock %}

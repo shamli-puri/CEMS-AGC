@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% block title %}Edit Profile — {{ APP_NAME }} | {{ APP_TITLE }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>Edit Profile</h1>
+    <p class="muted">Update your {{ current_user.role_label }} details in {{ APP_NAME }}.</p>
+  </div>
+  <a class="btn btn-ghost" href="{{ url_for('profile.view') }}">{{ ui.icon('chevron-left', 16) }} Cancel</a>
+</div>
+
+<form method="post" action="{{ url_for('profile.edit') }}" class="card form" novalidate>
+  <div class="form__grid">
+    <div class="form__row">
+      <label for="name">Full name <span class="req">*</span></label>
+      <input type="text" id="name" name="name" required minlength="3" value="{{ form.name }}">
+    </div>
+    <div class="form__row">
+      <label for="phone">Mobile number</label>
+      <input type="tel" id="phone" name="phone" value="{{ form.phone }}" placeholder="10 digit mobile number">
+    </div>
+
+    {% if current_user.is_student %}
+      <div class="form__row">
+        <label for="roll_number">Roll / Enrollment number</label>
+        <input type="text" id="roll_number" name="roll_number" value="{{ form.roll_number }}">
+      </div>
+      <div class="form__row">
+        <label for="department">Department</label>
+        <select id="department" name="department">
+          {% for dept in departments %}
+            <option value="{{ dept }}" {% if form.department == dept %}selected{% endif %}>{{ dept }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form__row">
+        <label for="year_of_study">Year of study</label>
+        <select id="year_of_study" name="year_of_study">
+          <option value="">Select year</option>
+          {% for year in years %}
+            <option value="{{ year }}" {% if form.year_of_study == year %}selected{% endif %}>{{ year }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    {% elif current_user.is_faculty %}
+      <div class="form__row">
+        <label for="employee_id">Employee ID</label>
+        <input type="text" id="employee_id" name="employee_id" value="{{ form.employee_id }}">
+      </div>
+      <div class="form__row">
+        <label for="department">Department</label>
+        <select id="department" name="department">
+          <option value="">Select department</option>
+          {% for dept in departments %}
+            <option value="{{ dept }}" {% if form.department == dept %}selected{% endif %}>{{ dept }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form__row">
+        <label for="designation">Designation</label>
+        <input type="text" id="designation" name="designation" value="{{ form.designation }}"
+               placeholder="e.g. Associate Professor">
+      </div>
+    {% else %}
+      <div class="form__row">
+        <label for="organization">Organisation / Committee</label>
+        <input type="text" id="organization" name="organization" value="{{ form.organization }}"
+               placeholder="e.g. AGC Technical &amp; Cultural Committee">
+      </div>
+      <div class="form__row">
+        <label for="designation">Designation</label>
+        <input type="text" id="designation" name="designation" value="{{ form.designation }}"
+               placeholder="e.g. Event Coordinator">
+      </div>
+    {% endif %}
+
+    <div class="form__row form__row--full">
+      <label for="bio">Short introduction</label>
+      <textarea id="bio" name="bio" rows="4" maxlength="500">{{ form.bio }}</textarea>
+    </div>
+  </div>
+
+  <div class="alert alert--info mt">
+    {{ ui.icon('info', 18) }}
+    <span>Your email address ({{ current_user.email }}}) is your login ID and cannot be changed here.</span>
+  </div>
+
+  <div class="form__actions">
+    <button type="submit" class="btn btn-primary btn-lg">{{ ui.icon('check', 18) }} Save changes</button>
+    <a class="btn btn-ghost" href="{{ url_for('profile.view') }}">Cancel</a>
+    <a class="btn btn-ghost" href="{{ url_for('profile.change_password') }}">{{ ui.icon('lock', 16) }} Change password</a>
+  </div>
+</form>
+{% endblock %}

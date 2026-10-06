@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% block title %}My Profile — {{ APP_NAME }} | {{ APP_TITLE }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <span class="role-pill role-pill--{{ current_user.role | lower }}">{{ current_user.role_label }}</span>
+    <h1>My Profile</h1>
+    <p class="muted">{{ ORG_NAME }} &middot; {{ APP_NAME }} account</p>
+  </div>
+  <div class="page-head__actions">
+    <a class="btn btn-ghost" href="{{ url_for('profile.change_password') }}">{{ ui.icon('lock', 16) }} Change password</a>
+    <a class="btn btn-primary" href="{{ url_for('profile.edit') }}">{{ ui.icon('edit', 16) }} Edit profile</a>
+  </div>
+</div>
+
+<div class="grid grid--2 grid--main">
+  <section class="card">
+    <div class="card__head"><h3>{{ ui.icon('user', 19) }} Account details</h3></div>
+    <div class="profile-head">
+      <span class="avatar avatar--xl">{{ current_user.initials }}</span>
+      <div>
+        <h2>{{ current_user.name }}</h2>
+        <p class="muted">{{ current_user.display_meta }}</p>
+        <span class="role-pill role-pill--{{ current_user.role | lower }}">{{ current_user.role_label }}</span>
+      </div>
+    </div>
+    <div class="detail-grid">
+      <div><span class="detail-grid__label">Email</span>{{ current_user.email }}</div>
+      <div><span class="detail-grid__label">Phone</span>{{ current_user.phone or '-' }}</div>
+      <div><span class="detail-grid__label">Department</span>{{ current_user.department or '-' }}</div>
+      {% if current_user.is_student %}
+        <div><span class="detail-grid__label">Roll number</span>{{ current_user.roll_number or '-' }}</div>
+        <div><span class="detail-grid__label">Year of study</span>{{ current_user.year_of_study or '-' }}</div>
+        <div><span class="detail-grid__label">Registrations</span>{{ counts.registrations }}</div>
+        <div><span class="detail-grid__label">Certificates</span>{{ counts.certificates }}</div>
+        <div><span class="detail-grid__label">Feedback given</span>{{ counts.feedback }}</div>
+      {% elif current_user.is_faculty %}
+        <div><span class="detail-grid__label">Employee ID</span>{{ current_user.employee_id or '-' }}</div>
+        <div><span class="detail-grid__label">Designation</span>{{ current_user.designation or '-' }}</div>
+        <div><span class="detail-grid__label">Campus events</span>{{ counts.events }}</div>
+        <div><span class="detail-grid__label">Feedback reports</span>{{ counts.feedback }}</div>
+      {% else %}
+        <div><span class="detail-grid__label">Designation</span>{{ current_user.designation or '-' }}</div>
+        <div><span class="detail-grid__label">Organisation</span>{{ current_user.organization or '-' }}</div>
+        <div><span class="detail-grid__label">Events created</span>{{ counts.events }}</div>
+      {% endif %}
+      <div><span class="detail-grid__label">Member since</span>{{ current_user.created_at | date_fmt }}</div>
+      <div><span class="detail-grid__label">Last login</span>{{ current_user.last_login_at | datetime_fmt if current_user.last_login_at else 'This session' }}</div>
+    </div>
+  </section>
+
+  <div class="stack">
+    <section class="card card--accent">
+      <div class="card__head"><h3>{{ ui.icon('chart', 19) }} Profile completeness</h3></div>
+      <div class="progress progress--lg"><div class="progress__bar"><span style="width: {{ profile_score }}%"></span></div></div>
+      <p class="muted">{{ profile_score }}% complete</p>
+      {% if profile_score < 100 %}
+        <p class="muted small">Fill in the remaining fields so organizers and faculty can identify you easily.</p>
+        <a class="btn btn-sm btn-primary btn-block" href="{{ url_for('profile.edit') }}">{{ ui.icon('edit', 15) }} Complete profile</a>
+      {% else %}
+        <p class="muted small">Your profile is fully complete.</p>
+      {% endif %}
+    </section>
+
+    <section class="card">
+      <div class="card__head"><h3>{{ ui.icon('file', 19) }} About me</h3></div>
+      <p class="prose">{{ current_user.bio or 'No introduction added yet. Use Edit profile to add a short bio.' }}</p>
+    </section>
+
+    <section class="card">
+      <div class="card__head"><h3>{{ ui.icon('shield', 19) }} Security</h3></div>
+      <ul class="tick-list">
+        <li>Password is stored as a salted hash (Werkzeug pbkdf2)</li>
+        <li>Session based authentication with CSRF-safe POST forms</li>
+        <li>Role based access control on every protected route</li>
+      </ul>
+      <a class="btn btn-sm btn-ghost btn-block" href="{{ url_for('profile.change_password') }}">
+        {{ ui.icon('lock', 15) }} Change password
+      </a>
+    </section>
+
+    <section class="card">
+      <div class="card__head"><h3>{{ ui.icon('grid', 19) }} Quick navigation</h3></div>
+      <div class="quick-actions">
+        <a class="quick-action" href="{{ url_for(home_endpoint) }}">{{ ui.icon('dashboard', 20) }}<span>Dashboard</span></a>
+        <a class="quick-action" href="{{ url_for('events.catalogue') }}">{{ ui.icon('grid', 20) }}<span>Events</span></a>
+        <a class="quick-action" href="{{ url_for('notices.index') }}">{{ ui.icon('bell', 20) }}<span>Notices</span></a>
+        <a class="quick-action" href="{{ url_for('auth.logout') }}">{{ ui.icon('logout', 20) }}<span>Logout</span></a>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

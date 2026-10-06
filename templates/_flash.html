@@ -1,0 +1,20 @@
+{% import "_icons.html" as ui %}
+{% if get_flashed_messages(with_categories=true) %}
+<div class="flash-stack" id="flash-stack">
+  {% for category, message in get_flashed_messages(with_categories=true) %}
+    <div class="alert alert--{{ category }}" role="alert" data-flash>
+      <span class="alert__icon">
+        {%- if category == 'success' -%}{{ ui.icon('check-circle', 18) }}
+        {%- elif category == 'danger' -%}{{ ui.icon('x-circle', 18) }}
+        {%- elif category == 'warning' -%}{{ ui.icon('alert', 18) }}
+        {%- elif category == 'info' -%}{{ ui.icon('info', 18) }}
+        {%- else -%}{{ ui.icon('info', 18) }}{%- endif -%}
+      </span>
+      <span class="alert__text">{{ message }}</span>
+      <button type="button" class="icon-btn alert__close" data-flash-close aria-label="Dismiss message">
+        {{ ui.icon('x', 16) }}
+      </button>
+    </div>
+  {% endfor %}
+</div>
+{% endif %}

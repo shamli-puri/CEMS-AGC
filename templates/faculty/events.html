@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% block title %}All Events — {{ APP_NAME }} | {{ APP_TITLE }}{% endblock %}
+{% block body_class %}app-body app-body--faculty{% endblock %}
+
+{% block content %}
+<div class="page-head page-head--faculty">
+  <div>
+    <h1>All AGC Events</h1>
+    <p class="muted">Faculty view of every event organised across {{ ORG_NAME }}.</p>
+  </div>
+  <a class="btn btn-faculty" href="{{ url_for('faculty.dashboard') }}">{{ ui.icon('chevron-left', 16) }} Dashboard</a>
+</div>
+
+<form class="toolbar" method="get" action="{{ url_for('faculty.events') }}">
+  <div class="toolbar__search">
+    {{ ui.icon('search', 17) }}
+    <input type="search" name="q" value="{{ filters.q or '' }}" placeholder="Search events…" aria-label="Search events">
+  </div>
+  <select name="category" aria-label="Category">
+    <option value="all">All categories</option>
+    {% for cat in categories %}
+      <option value="{{ cat }}" {% if filters.category == cat %}selected{% endif %}>{{ cat }}</option>
+    {% endfor %}
+  </select>
+  <select name="status" aria-label="Status">
+    <option value="all">All statuses</option>
+    {% for s in ['UPCOMING', 'ONGOING', 'COMPLETED', 'CANCELLED'] %}
+      <option value="{{ s }}" {% if filters.status == s %}selected{% endif %}>{{ s.title() }}</option>
+    {% endfor %}
+  </select>
+  <input type="date" name="date_from" value="{{ filters.date_from or '' }}" title="From date" aria-label="From date">
+  <input type="date" name="date_to" value="{{ filters.date_to or '' }}" title="To date" aria-label="To date">
+  <button type="submit" class="btn btn-faculty">{{ ui.icon('filter', 16) }} Apply</button>
+  <a class="btn btn-ghost" href="{{ url_for('faculty.events') }}">{{ ui.icon('refresh', 16) }} Reset</a>
+</form>
+
+{% if filter_error %}<p class="alert alert--warning">{{ filter_error }}</p>{% endif %}
+<p class="muted">{{ events | length }} event(s) found</p>
+
+{% if events %}
+  <div class="table-wrap card">
+    <table class="table">
+      <thead>
+        <tr><th>Event</th><th>Schedule</th><th>Venue</th><th>Organizer</th><th>Registrations</th><th>Status</th><th class="right">Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for event in events %}
+          <tr>
+            <td>
+              <a class="link-strong" href="{{ url_for('faculty.event_detail', event_id=event.id) }}">{{ event.title }}</a>
+              <small class="block muted">{{ event.category }}</small>
+            </td>
+            <td class="nowrap">{{ event.event_date | date_fmt }}<small class="block muted">{{ event.time_range }}</small></td>
+            <td>{{ event.venue }}</td>
+            <td>{{ event.organizer.name }}</td>
+            <td>
+              <span class="badge badge-info">{{ event.seats_taken }}/{{ event.max_capacity }}</span>
+              <small class="block muted">{{ event.seats_left }} seats left</small>
+            </td>
+            <td><span class="badge {{ event.status_class() }}">{{ event.status }}</span></td>
+            <td class="right nowrap">
+              <a class="btn btn-sm btn-ghost" href="{{ url_for('faculty.event_registrations', event_id=event.id) }}">
+                {{ ui.icon('users', 15) }} List
+              </a>
+              <a class="btn btn-sm btn-faculty" href="{{ url_for('faculty.attendance', event_id=event.id) }}">
+                {{ ui.icon('check', 15) }} Attendance
+              </a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="card empty">
+    {{ ui.icon('calendar', 40) }}
+    <p><strong>No events match your filters.</strong></p>
+    <a class="btn btn-faculty btn-sm" href="{{ url_for('faculty.events') }}">{{ ui.icon('refresh', 15) }} Reset filters</a>
+  </div>
+{% endif %}
+{% endblock %}

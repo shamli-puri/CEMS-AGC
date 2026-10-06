@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% block title %}Notices — {{ APP_NAME }} | {{ APP_TITLE }}{% endblock %}
+{% block body_class %}app-body app-body--faculty{% endblock %}
+
+{% block content %}
+<div class="page-head page-head--faculty">
+  <div>
+    <h1>Faculty Notices</h1>
+    <p class="muted">Announcements published for the faculty of {{ ORG_NAME }}.</p>
+  </div>
+  <a class="btn btn-faculty" href="{{ url_for('faculty.dashboard') }}">{{ ui.icon('chevron-left', 16) }} Dashboard</a>
+</div>
+
+{% if notices %}
+  <div class="notice-board">
+    {% for n in notices %}
+      <article class="notice-card {% if n.is_important %}notice-card--important{% endif %}">
+        <div class="notice-card__side">
+          <span class="notice-card__day">{{ n.published_at.day }}</span>
+          <span class="notice-card__month">{{ n.published_at.strftime('%b') | upper }}</span>
+        </div>
+        <div class="notice-card__body">
+          <div class="chip-row">
+            {% if n.is_important %}<span class="badge badge-important">{{ ui.icon('alert', 13) }} Important</span>{% endif %}
+            <span class="chip">{{ n.audience }}</span>
+            <span class="chip">{{ n.published_at | datetime_fmt }}</span>
+          </div>
+          <h3><a href="{{ url_for('faculty.notice_detail', notice_id=n.id) }}">{{ n.title }}</a></h3>
+          <p>{{ n.description | shorten(220) }}</p>
+          <small class="muted">Posted by {{ n.author_name }}</small>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="card empty">
+    {{ ui.icon('bell', 40) }}
+    <p><strong>No notices for faculty.</strong></p>
+  </div>
+{% endif %}
+{% endblock %}

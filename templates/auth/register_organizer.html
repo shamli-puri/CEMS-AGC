@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% block title %}Organizer Registration — {{ APP_NAME }} | {{ APP_TITLE }}{% endblock %}
+{% block body_class %}app-body app-body--auth{% endblock %}
+{% block content_class %}content--auth{% endblock %}
+
+{% block content %}
+<div class="auth-shell auth-shell--single">
+  <section class="auth-form-panel auth-form-panel--full">
+    <div class="auth-card auth-card--wide">
+      <div class="auth-brand">
+        {{ ui.brand_mark(48) }}
+        <div>
+          <h2>Organizer Registration</h2>
+          <p>{{ APP_NAME }} — {{ APP_TITLE }}</p>
+          <p class="muted">{{ ORG_NAME }}, {{ ORG_PLACE }}</p>
+        </div>
+      </div>
+
+      <p class="muted">
+        Event organizers can self-register to create and manage campus events, handle registrations, verify attendance, and issue certificates.
+      </p>
+
+      <form method="post" action="{{ url_for('auth.register_organizer') }}" class="form" novalidate>
+        <div class="form__grid">
+          <div class="form__row">
+            <label for="name">Full name <span class="req">*</span></label>
+            <input type="text" id="name" name="name" required placeholder="e.g. Rohan Verma"
+                   value="{{ form.name or '' }}">
+          </div>
+          <div class="form__row">
+            <label for="email">College email <span class="req">*</span></label>
+            <input type="email" id="email" name="email" required placeholder="name@agc.edu.in"
+                   value="{{ form.email or '' }}">
+          </div>
+          <div class="form__row">
+            <label for="designation">Designation <span class="req">*</span></label>
+            <input type="text" id="designation" name="designation" required placeholder="e.g. Event Coordinator"
+                   value="{{ form.designation or '' }}">
+          </div>
+          <div class="form__row">
+            <label for="organization">Organization / Committee <span class="req">*</span></label>
+            <input type="text" id="organization" name="organization" required placeholder="e.g. AGC Technical & Cultural Committee"
+                   value="{{ form.organization or '' }}">
+          </div>
+          <div class="form__row">
+            <label for="phone">Mobile number</label>
+            <input type="tel" id="phone" name="phone" placeholder="10 digit mobile number"
+                   value="{{ form.phone or '' }}">
+          </div>
+          <div class="form__row">
+            <label for="password">Password <span class="req">*</span></label>
+            <input type="password" id="password" name="password" required minlength="6"
+                   placeholder="Minimum 6 characters" autocomplete="new-password">
+          </div>
+          <div class="form__row">
+            <label for="confirm_password">Confirm password <span class="req">*</span></label>
+            <input type="password" id="confirm_password" name="confirm_password" required minlength="6"
+                   placeholder="Repeat the password" autocomplete="new-password">
+          </div>
+        </div>
+
+        <div class="form__row">
+          <label for="bio">Short introduction</label>
+          <textarea id="bio" name="bio" rows="3" maxlength="400"
+                    placeholder="Optional: your role in the committee, events you've organized">{{ form.bio or '' }}</textarea>
+        </div>
+
+        <label class="checkbox">
+          <input type="checkbox" name="agree" value="1" required>
+          <span>I agree to the AGC campus event participation guidelines and the CEMS privacy policy.</span>
+        </label>
+
+        <div class="form__actions">
+          <button type="submit" class="btn btn-organizer btn-lg">{{ ui.icon('check', 18) }} Create organizer account</button>
+          <a class="btn btn-ghost" href="{{ url_for('auth.login_organizer') }}">Back to organizer login</a>
+        </div>
+      </form>
+    </div>
+  </section>
+</div>
+{% endblock %}

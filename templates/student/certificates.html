@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% block title %}Certificates — {{ APP_NAME }} | {{ APP_TITLE }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>My Certificates</h1>
+    <p class="muted">Participation certificates issued by {{ APP_NAME }} for verified attendance.</p>
+  </div>
+  <a class="btn btn-ghost" href="{{ url_for('student.dashboard') }}">{{ ui.icon('chevron-left', 16) }} Dashboard</a>
+</div>
+
+{% if eligible %}
+  <div class="alert alert--info">
+    {{ ui.icon('info', 18) }}
+    <span>
+      {{ eligible | length }} certificate(s) are eligible for issuance based on your verified attendance.
+      Open <a href="{{ url_for('student.certificates') }}">Certificates</a> &mdash; they are issued automatically
+      on this page load.
+    </span>
+  </div>
+{% endif %}
+
+{% if certificates %}
+  <div class="grid grid--3">
+    {% for c in certificates %}
+      <article class="cert-card">
+        <div class="cert-card__ribbon">{{ ui.icon('award', 22) }}</div>
+        <div class="cert-card__brand">
+          <strong>{{ APP_NAME }}</strong>
+          <small>{{ APP_TITLE }}</small>
+        </div>
+        <h3>{{ c.event.title }}</h3>
+        <p class="cert-card__name">{{ c.student.name }}</p>
+        <dl class="cert-card__dl">
+          <div><dt>Event date</dt><dd>{{ c.event.event_date | date_fmt }}</dd></div>
+          <div><dt>Venue</dt><dd>{{ c.event.venue }}</dd></div>
+          <div><dt>Certificate ID</dt><dd><code class="code-chip">{{ c.certificate_id }}</code></dd></div>
+          <div><dt>Issued on</dt><dd>{{ c.issue_date_label }}</dd></div>
+          <div><dt>Issued by</dt><dd>{{ c.issued_by.name if c.issued_by else 'AGC' }}</dd></div>
+        </dl>
+        <div class="cert-card__actions">
+          <a class="btn btn-sm btn-accent" href="{{ url_for('student.certificate_pdf', certificate_id=c.id) }}">
+            {{ ui.icon('download', 15) }} Download PDF
+          </a>
+          <a class="btn btn-sm btn-ghost" href="{{ url_for('student.certificate_email', certificate_id=c.id) }}">
+            {{ ui.icon('mail', 15) }} Email
+          </a>
+          <a class="btn btn-sm btn-ghost" href="{{ url_for('student.event_detail', event_id=c.event_id) }}">
+            {{ ui.icon('eye', 15) }} Event
+          </a>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="card empty">
+    {{ ui.icon('certificate', 40) }}
+    <p><strong>No certificates issued yet.</strong></p>
+    <p class="muted">
+      A certificate is generated automatically once you are marked Present for a completed AGC event.
+    </p>
+    <div class="stack-sm">
+      <a class="btn btn-primary btn-sm" href="{{ url_for('student.attendance') }}">
+        {{ ui.icon('clipboard', 15) }} Check my attendance
+      </a>
+      <a class="btn btn-ghost btn-sm" href="{{ url_for('student.events') }}">
+        {{ ui.icon('search', 15) }} Find more events
+      </a>
+    </div>
+  </div>
+{% endif %}
+
+<section class="card">
+  <div class="card__head"><h3>{{ ui.icon('shield', 19) }} Certificate eligibility rules</h3></div>
+  <ul class="tick-list">
+    <li>You must be marked Present by faculty or the organizer</li>
+    <li>The event must be completed</li>
+    <li>The organizer must mark the event as certificate eligible</li>
+    <li>One certificate per event, issued with a unique certificate ID</li>
+  </ul>
+</section>
+{% endblock %}

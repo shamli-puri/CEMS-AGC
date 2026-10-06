@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% block title %}{{ APP_NAME }} — {{ APP_TITLE }}{% endblock %}
+{% block body_class %}app-body app-body--auth{% endblock %}
+{% block content_class %}content--auth{% endblock %}
+
+{% block content %}
+<section class="welcome">
+  <div class="welcome__card">
+    <div class="welcome__logo">{{ ui.brand_mark(84) }}</div>
+    <p class="welcome__eyebrow">{{ ORG_NAME }}</p>
+    <h1 class="welcome__title">{{ APP_NAME }}</h1>
+    <p class="welcome__subtitle">{{ APP_TITLE }}</p>
+    <p class="welcome__org">{{ ORG_NAME }} &middot; {{ ORG_PLACE }}</p>
+    <div class="welcome__cta">
+      <a class="btn btn-light btn-lg" href="{{ url_for('auth.login') }}">
+        {{ ui.icon('login', 19) }} Get Started
+      </a>
+      <a class="btn btn-outline-light btn-lg" href="{{ url_for('main.about') }}">
+        {{ ui.icon('info', 19) }} About CEMS
+      </a>
+    </div>
+    <p class="welcome__note">One portal for students, faculty and event organizers.</p>
+  </div>
+
+  <div class="welcome__features">
+    <article class="welcome__feature">
+      {{ ui.icon('qr', 26) }}
+      <h3>QR Digital Tickets</h3>
+      <p>Register for events and receive an instant scannable QR ticket.</p>
+    </article>
+    <article class="welcome__feature">
+      {{ ui.icon('clipboard', 26) }}
+      <h3>Attendance Tracking</h3>
+      <p>Faculty and organizers verify attendance at the venue desk.</p>
+    </article>
+    <article class="welcome__feature">
+      {{ ui.icon('certificate', 26) }}
+      <h3>Digital Certificates</h3>
+      <p>Download PDF certificates after verified event participation.</p>
+    </article>
+    <article class="welcome__feature">
+      {{ ui.icon('bell', 26) }}
+      <h3>Campus Notices</h3>
+      <p>Announcements and updates across the whole AGC campus.</p>
+    </article>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ui %}
+{% block title %}About — {{ APP_NAME }} | {{ APP_TITLE }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>About {{ APP_NAME }}</h1>
+    <p class="muted">{{ APP_TITLE }} &middot; {{ ORG_NAME }}, {{ ORG_PLACE }}</p>
+  </div>
+  <a class="btn btn-primary" href="{{ url_for('auth.login') }}">{{ ui.icon('login', 17) }} Go to login</a>
+</div>
+
+<div class="grid grid--3">
+  <article class="card">
+    <div class="card__head">
+      <span class="card__icon card__icon--student">{{ ui.icon('user', 20) }}</span>
+      <h3>Student portal</h3>
+    </div>
+    <ul class="tick-list">
+      <li>Browse, search and filter AGC campus events</li>
+      <li>Register and cancel registrations where allowed</li>
+      <li>Digital ticket with a scannable QR code</li>
+      <li>Attendance status, feedback and certificate downloads</li>
+    </ul>
+  </article>
+
+  <article class="card">
+    <div class="card__head">
+      <span class="card__icon card__icon--faculty">{{ ui.icon('book', 20) }}</span>
+      <h3>Faculty portal</h3>
+    </div>
+    <ul class="tick-list">
+      <li>Dedicated faculty dashboard with live counters</li>
+      <li>Event-wise registrations and attendee lists</li>
+      <li>Attendance marking for supervised events</li>
+      <li>Feedback review for campus events</li>
+    </ul>
+  </article>
+
+  <article class="card">
+    <div class="card__head">
+      <span class="card__icon card__icon--organizer">{{ ui.icon('megaphone', 20) }}</span>
+      <h3>Organizer portal</h3>
+    </div>
+    <ul class="tick-list">
+      <li>Create, edit, cancel and delete events</li>
+      <li>Registration and attendee management</li>
+      <li>Attendance verification and certificate issuing</li>
+      <li>Event statistics, feedback reports and notices</li>
+    </ul>
+  </article>
+</div>
+
+<div class="card">
+  <div class="card__head"><h3>Technology used</h3></div>
+  <div class="chip-row">
+    <span class="chip chip--lg">Python 3</span>
+    <span class="chip chip--lg">Flask</span>
+    <span class="chip chip--lg">SQLite</span>
+    <span class="chip chip--lg">SQLAlchemy</span>
+    <span class="chip chip--lg">Jinja2</span>
+    <span class="chip chip--lg">Bootstrap style custom CSS</span>
+    <span class="chip chip--lg">QR generation</span>
+    <span class="chip chip--lg">PDF certificates</span>
+  </div>
+</div>
+{% endblock %}
